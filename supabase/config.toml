@@ -1,5 +1,1 @@
-
-project_id = "fdqtfghbvxslpyxmsjag"
-
-[functions.send-health-sms]
-verify_jwt = false
+project_id = "djrxxbneqtltjjdhceuq"
