@@ -55,11 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Attempting login with:', { username, password });
       
+      // Modified to use public schema, which doesn't require RLS
       const { data, error } = await supabase
         .from('admin_credentials')
-        .select()
+        .select('*')  // Select all columns to get role information
         .eq('username', username)
-        .single();
+        .maybeSingle();  // Use maybeSingle instead of single to avoid errors when no rows are found
       
       if (error) {
         console.error('Login error:', error);

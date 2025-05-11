@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,34 +43,32 @@ const LoginPage = () => {
     console.log('Login attempt with:', { username, password });
     
     try {
-      // Check directly if credentials exist to debug
-      const { data: directCheck, error: directError } = await supabase
+      // Check if the user exists first
+      const { data: userCheck } = await supabase
         .from('admin_credentials')
-        .select('*')
+        .select('username')
         .eq('username', username);
       
-      if (directError) {
-        console.error('Direct query error:', directError);
-        setDebugInfo(`שגיאת שאילתה: ${directError.message}`);
-      } else {
-        console.log('Direct query results:', directCheck);
-        if (directCheck && directCheck.length > 0) {
-          setDebugInfo(`נמצא משתמש "${username}" במערכת. בודק סיסמה...`);
-        } else {
-          setDebugInfo(`משתמש "${username}" לא נמצא במערכת.`);
-        }
-      }
-      
-      // Proceed with normal login
-      const success = await login(username, password);
-      console.log('Login result:', success);
-      
-      if (!success) {
+      if (!userCheck || userCheck.length === 0) {
+        setDebugInfo(`משתמש "${username}" לא נמצא במערכת.`);
         toast({
           title: "שגיאת התחברות",
-          description: "שם משתמש או סיסמה שגויים",
+          description: "שם משתמש לא קיים",
           variant: "destructive",
         });
+        setIsLoading(false);
+        return;
+      }
+      
+      setDebugInfo(`נמצא משתמש "${username}" במערכת. בודק ��יסמה...`);
+      
+      // Attempt to login
+      const success = await login(username, password);
+      
+      if (success) {
+        setDebugInfo("התחברות מוצלחת! מעביר אותך למערכת...");
+      } else {
+        setDebugInfo("סיסמה שגויה.");
       }
     } catch (error) {
       console.error('Login error:', error);
