@@ -1,6 +1,6 @@
 
 import { jsPDF } from 'jspdf';
-import { forceLtrDirection } from '../helpers/textFormatting';
+import { forceLtrDirection, reverseString } from '../helpers/textFormatting';
 
 /**
  * Add participant information section to the PDF document
@@ -43,10 +43,10 @@ export function addParticipantSection(
   // Move to next row
   currentY += rowHeight;
   
-  // Draw table rows for ID and phone
+  // Draw table rows for ID and phone - apply reverseString to fix display direction
   const rows = [
-    ['תעודת זהות', forceLtrDirection(participantInfo.idnumber || '')],
-    ['טלפון', forceLtrDirection(participantInfo.phone || '')]
+    ['תעודת זהות', reverseString(forceLtrDirection(participantInfo.idnumber || ''))],
+    ['טלפון', reverseString(forceLtrDirection(participantInfo.phone || ''))]
   ];
   
   rows.forEach((row) => {

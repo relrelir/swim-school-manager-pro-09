@@ -1,6 +1,6 @@
 
 import { jsPDF } from 'jspdf';
-import { forceLtrDirection } from '../helpers/textFormatting';
+import { forceLtrDirection, reverseString } from '../helpers/textFormatting';
 
 /**
  * Add parent/guardian information section to the PDF document
@@ -48,9 +48,9 @@ export function addParentSection(
   // Draw column separator
   pdf.line(margin + colWidth, currentY, margin + colWidth, currentY + rowHeight);
   
-  // Add row text with forceLtrDirection for the ID number
+  // Add row text with forceLtrDirection AND reverseString for the ID number
   pdf.text('תעודת זהות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
-  pdf.text(forceLtrDirection(parentInfo.id || ''), margin + colWidth - 5, currentY + 7, { align: 'right' });
+  pdf.text(reverseString(forceLtrDirection(parentInfo.id || '')), margin + colWidth - 5, currentY + 7, { align: 'right' });
   
   // Move to next row
   currentY += rowHeight;
