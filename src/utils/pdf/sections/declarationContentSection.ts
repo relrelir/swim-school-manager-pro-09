@@ -17,25 +17,26 @@ export function addDeclarationContentSection(
   currentY += 8;
   pdf.setFontSize(12);
   
-  // Declaration content
+  // Updated declaration content
   const declarationText = [
-    '• אני מצהיר/ה בזאת כי בני/בתי/אני נמצא/ת בכושר ובמצב בריאותי תקין/מסוגל להשתתף בפעילות.',
-    '• בהצהרה זו הנני מתחייב/ת, כי אם יחול שינוי במצבו/ה הבריאותי, אעדכן אותך באופן מיידי.',
-    '• אני מתחייב/ת לדווח לך על כל שינוי במצב הבריאותי.',
-    '• אני מאשר/ת לגופכם הרפואי לטפל באופן ראשוני במקרה הצורך.',
-    '• ידוע לי שאחריות בריאותו של בני/בתי חלה עלי בכל ההשתתפות בפעילות.'
+    '• אני מצהיר/ה כי בני/בתי בריא/ה ואין לו/לה מגבלות בריאותיות המונעות ממנו/ממנה להשתתף בפעילות.',
+    '• במידה ויש מגבלה רפואית, יש לציין אותה בהערות למעלה ולצרף אישור רפואי המאשר השתתפות.',
+    '• אני מתחייב/ת לעדכן על כל שינוי במצב הבריאותי.',
+    '• אני מאשר/ת לצוות הרפואי לתת טיפול ראשוני במקרה הצורך.',
+    '• ידוע לי שללא הצהרת בריאות חתומה לא יוכל בני/בתי להשתתף בפעילות.'
   ];
   
-  // Draw a box for declaration content
-  pdf.rect(margin, currentY, pageWidth - (2 * margin), declarationText.length * 10 + 10);
-  currentY += 8;
+  // Draw a box for declaration content - make it more compact
+  const boxHeight = declarationText.length * 8 + 8; // Reduced height from 10 to 8 per line
+  pdf.rect(margin, currentY, pageWidth - (2 * margin), boxHeight);
+  currentY += 6; // Reduced from 8
   
-  // Add the bullet points
+  // Add the bullet points with smaller spacing
   declarationText.forEach(text => {
     pdf.text(text, pageWidth - margin - 5, currentY, { align: 'right' });
-    currentY += 10;
+    currentY += 8; // Reduced spacing between lines from 10 to 8
   });
   
-  // Add space after declaration
-  return currentY + 8;
+  // Add reduced space after declaration
+  return currentY + 6; // Reduced from 8
 }

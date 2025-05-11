@@ -18,8 +18,8 @@ export function addMedicalNotesSection(
   currentY += 8;
   pdf.setFontSize(12);
   
-  // Create a box for notes
-  const notesHeight = 20;
+  // Create a smaller box for notes
+  const notesHeight = 15; // Reduced from 20
   pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
   
   // Display notes or default message
@@ -32,5 +32,5 @@ export function addMedicalNotesSection(
   }
   
   // Add space after notes
-  return currentY + notesHeight + 10;
+  return currentY + notesHeight + 8; // Reduced from 10
 }

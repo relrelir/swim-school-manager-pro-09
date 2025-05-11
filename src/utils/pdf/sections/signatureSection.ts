@@ -22,8 +22,8 @@ export function addSignatureSection(
   if (signature) {
     try {
       // Calculate signature dimensions - better size and position
-      const maxSignatureWidth = 80; // Smaller signature width
-      const signatureHeight = 30; // Smaller signature height
+      const maxSignatureWidth = 100; // Larger signature width (was 80)
+      const signatureHeight = 40; // Larger signature height (was 30)
       
       // Add the signature image - centered horizontally
       pdf.addImage(
@@ -35,7 +35,7 @@ export function addSignatureSection(
         signatureHeight
       );
       
-      currentY += signatureHeight + 5; // Add space after signature
+      currentY += signatureHeight + 10; // Add more space after signature (was 5)
     } catch (error) {
       console.warn('Failed to add signature image to PDF:', error);
       // Add a line for manual signature if the image fails
