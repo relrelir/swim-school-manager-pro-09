@@ -44,8 +44,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
       const { data, error } = await supabase
         .from('health_declarations')
         .select('id')
-        .eq('participant_id', participantId)
-        .maybeSingle();
+        .eq('participant_id', participantId);
       
       if (error) {
         console.error("Error checking for health declaration:", error);
@@ -53,7 +52,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
       }
       
       // Update state only if changed
-      const declarationExists = Boolean(data?.id);
+      const declarationExists = Boolean(data && data.length > 0);
       if (hasHealthDeclaration !== declarationExists) {
         setHasHealthDeclaration(declarationExists);
       }

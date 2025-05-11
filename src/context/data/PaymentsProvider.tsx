@@ -37,7 +37,7 @@ export const PaymentsProvider: React.FC<PaymentsProviderProps> = ({ children }) 
       try {
         const { data, error } = await supabase
           .from('payments')
-          .select('*');
+          .select();
 
         if (error) {
           handleSupabaseError(error, 'fetching payments');

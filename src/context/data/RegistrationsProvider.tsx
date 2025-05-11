@@ -29,7 +29,7 @@ export const RegistrationsProvider: React.FC<RegistrationsProviderProps> = ({ ch
       try {
         const { data, error } = await supabase
           .from('registrations')
-          .select('*');
+          .select();
 
         if (error) {
           handleSupabaseError(error, 'fetching registrations');

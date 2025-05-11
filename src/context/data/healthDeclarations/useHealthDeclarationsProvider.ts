@@ -1,31 +1,23 @@
+
 import { useState, useEffect } from 'react';
 import { HealthDeclaration } from '@/types';
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
 import { fetchHealthDeclarations } from './fetchHealthDeclarations';
-import { addHealthDeclaration } from './addHealthDeclaration';
-import { updateHealthDeclarationService } from './updateHealthDeclaration';
-import { getHealthDeclarationById, getHealthDeclarationByToken } from './getHealthDeclaration';
-import { createHealthDeclarationLink as createHealthDeclarationLinkService } from './createHealthDeclarationLink';
-import { HealthDeclarationsContextType } from './context';
+import { addHealthDeclarationService } from './addHealthDeclaration';
+import { getHealthDeclarationByToken } from './getHealthDeclaration';
+import { createHealthDeclarationLink } from './createHealthDeclarationLink';
+import { updateHealthDeclaration as updateHealthDeclarationService } from './updateHealthDeclaration';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from "@/components/ui/use-toast";
 
-export const useHealthDeclarationsProvider = (): HealthDeclarationsContextType => {
+export const useHealthDeclarationsProvider = () => {
   const [healthDeclarations, setHealthDeclarations] = useState<HealthDeclaration[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load health declarations from Supabase
   useEffect(() => {
     const loadHealthDeclarations = async () => {
       try {
-        const declarations = await fetchHealthDeclarations();
-        setHealthDeclarations(declarations);
-      } catch (error) {
-        console.error('Error loading health declarations:', error);
-        toast({
-          title: "שגיאה",
-          description: "אירעה שגיאה בטעינת הצהרות בריאות",
-          variant: "destructive",
-        });
+        const data = await fetchHealthDeclarations();
+        setHealthDeclarations(data);
       } finally {
         setLoading(false);
       }
@@ -34,47 +26,40 @@ export const useHealthDeclarationsProvider = (): HealthDeclarationsContextType =
     loadHealthDeclarations();
   }, []);
 
-  // Add a health declaration
-  const addHealthDeclarationHandler = async (declaration: Omit<HealthDeclaration, 'id'>) => {
+  const addHealthDeclaration = async (healthDeclaration: Omit<HealthDeclaration, 'id'>) => {
     try {
-      const newDeclaration = await addHealthDeclaration(declaration);
+      const newDeclaration = await addHealthDeclarationService(healthDeclaration);
+      
       if (newDeclaration) {
-        setHealthDeclarations([...healthDeclarations, newDeclaration]);
-        return newDeclaration;
+        setHealthDeclarations(prevDeclarations => [...prevDeclarations, newDeclaration]);
       }
+      
+      return newDeclaration;
     } catch (error) {
       console.error('Error adding health declaration:', error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בהוספת הצהרת בריאות",
-        variant: "destructive",
-      });
+      return undefined;
     }
   };
 
-  // Update a health declaration
-  const updateHealthDeclaration = async (id: string, declaration: Partial<HealthDeclaration>) => {
+  const updateHealthDeclaration = async (id: string, updates: Partial<HealthDeclaration>) => {
     try {
-      const updatedDeclaration = await updateHealthDeclarationService(id, declaration);
+      const updatedDeclaration = await updateHealthDeclarationService(id, updates);
+      
       if (updatedDeclaration) {
-        setHealthDeclarations(
-          healthDeclarations.map((h) => (h.id === id ? updatedDeclaration : h))
+        setHealthDeclarations(prevDeclarations => 
+          prevDeclarations.map(declaration => 
+            declaration.id === id ? { ...declaration, ...updatedDeclaration } : declaration
+          )
         );
-        return updatedDeclaration;
       }
-      return undefined;
+      
+      return updatedDeclaration;
     } catch (error) {
       console.error('Error updating health declaration:', error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון הצהרת בריאות",
-        variant: "destructive",
-      });
       return undefined;
     }
   };
 
-  // Delete a health declaration
   const deleteHealthDeclaration = async (id: string) => {
     try {
       const { error } = await supabase
@@ -86,58 +71,79 @@ export const useHealthDeclarationsProvider = (): HealthDeclarationsContextType =
         throw error;
       }
       
-      setHealthDeclarations(healthDeclarations.filter((h) => h.id !== id));
+      setHealthDeclarations(prevDeclarations => 
+        prevDeclarations.filter(declaration => declaration.id !== id)
+      );
     } catch (error) {
       console.error('Error deleting health declaration:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה במחיקת הצהרת בריאות",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
 
-  // Get a health declaration for a registration
   const getHealthDeclarationForRegistration = async (registrationId: string) => {
     try {
-      return await getHealthDeclarationById(registrationId);
+      // First get the participant ID from the registration
+      const { data: registrationData, error: regError } = await supabase
+        .from('registrations')
+        .select('participantid')
+        .eq('id', registrationId)
+        .single();
+      
+      if (regError || !registrationData) {
+        console.error('Error getting registration:', regError);
+        return undefined;
+      }
+      
+      const participantId = registrationData.participantid;
+      
+      // Then get the health declaration for that participant
+      const { data, error } = await supabase
+        .from('health_declarations')
+        .select()
+        .eq('participant_id', participantId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {  // No rows returned error
+          console.log('No health declaration found for this registration');
+          return undefined;
+        }
+        console.error('Error getting health declaration:', error);
+        return undefined;
+      }
+      
+      // Convert from DB format to our TypeScript model
+      return data ? {
+        id: data.id,
+        participantId: data.participant_id,
+        token: data.token,
+        formStatus: data.form_status,
+        submissionDate: data.submission_date,
+        createdAt: data.created_at,
+        notes: data.notes,
+        signature: data.signature,
+        updatedAt: data.updated_at
+      } as HealthDeclaration : undefined;
     } catch (error) {
-      console.error('Error getting health declaration:', error);
-    }
-  };
-
-  // Create a health declaration link
-  const createHealthDeclarationLink = async (registrationId: string) => {
-    try {
-      return await createHealthDeclarationLinkService(registrationId);
-    } catch (error) {
-      console.error('Error creating health declaration link:', error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה ביצירת קישור להצהרת בריאות",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Get a health declaration by token - use the imported function
-  const getHealthDeclarationByTokenHandler = async (token: string) => {
-    try {
-      return await getHealthDeclarationByToken(token);
-    } catch (error) {
-      console.error('Error getting health declaration by token:', error);
+      console.error('Error getting health declaration for registration:', error);
       return undefined;
     }
   };
 
   return {
     healthDeclarations,
-    addHealthDeclaration: addHealthDeclarationHandler,
+    addHealthDeclaration,
     updateHealthDeclaration,
     deleteHealthDeclaration,
     getHealthDeclarationForRegistration,
     createHealthDeclarationLink,
-    getHealthDeclarationByToken: getHealthDeclarationByTokenHandler,
+    getHealthDeclarationByToken,
     loading
   };
 };

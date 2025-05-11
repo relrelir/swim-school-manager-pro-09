@@ -33,7 +33,7 @@ export const ParticipantsProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         const { data, error } = await supabase
           .from('participants')
-          .select('*');
+          .select();
 
         if (error) {
           handleSupabaseError(error, 'fetching participants');

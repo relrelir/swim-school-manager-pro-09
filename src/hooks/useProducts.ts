@@ -14,7 +14,7 @@ export function useProducts() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*');
+        .select();
 
       if (error) {
         handleSupabaseError(error, 'fetching products');
