@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { createRtlPdf } from './pdf/pdfConfig';
+import { jsPDF } from 'jspdf';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
 
@@ -12,8 +12,6 @@ interface HealthDeclarationData {
   notes: string | null;
   form_status: string;
   signature: string | null;
-  parent_name?: string | null;
-  parent_id?: string | null;
 }
 
 export const generateHealthDeclarationPdf = async (participantId: string) => {
@@ -30,7 +28,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('registrations')
       .select('*')
       .eq('participantid', participantId)
-      .single();
+      .maybeSingle();
       
     if (registrationError || !registration) {
       console.error("Registration details not found:", registrationError);
@@ -44,7 +42,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('participants')
       .select('firstname, lastname, idnumber, phone')
       .eq('id', participantId)
-      .single();
+      .maybeSingle();
     
     if (participantError || !participant) {
       console.error("Participant details not found:", participantError);
@@ -73,9 +71,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       submission_date: null,
       notes: null,
       form_status: 'pending',
-      signature: null,
-      parent_name: null,
-      parent_id: null
+      signature: null
     };
     
     const declarationData: HealthDeclarationData = healthDeclaration || defaultDeclaration;
@@ -90,9 +86,13 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     }
     
     try {
-      // Create the PDF document with RTL and font support
-      console.log("Creating PDF with RTL support");
-      const pdf = await createRtlPdf();
+      // Create a simple PDF document without complex font loading
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
       console.log("PDF object created successfully");
       
       // Build the PDF content with improved layout
