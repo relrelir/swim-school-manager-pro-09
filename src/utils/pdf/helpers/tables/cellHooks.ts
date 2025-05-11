@@ -18,8 +18,8 @@ export function didParseCell(data: CellHookData): void {
   cell.text = Array.isArray(processed.text) ? processed.text : [processed.text];
   
   // Apply appropriate alignment based on content type
-  if (/^\d{5,9}$/.test(cellContent)) {
-    // ID numbers - align left in RTL context
+  if (/^\d{5,9}$/.test(cellContent) || /^0\d{1,2}[\-\s]?\d{7,8}$/.test(cellContent) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(cellContent)) {
+    // ID numbers, phone numbers, dates - align left in RTL context
     cell.styles.halign = 'left';
   }
   else if (processed.isCurrency || !processed.isRtl) {
@@ -44,8 +44,8 @@ export function willDrawCell(data: CellHookData): void {
   
   const cellContent = Array.isArray(cell.text) ? cell.text.join('') : cell.text;
   
-  // For ID numbers and numbers, ensure correct direction
-  if (/^\d{5,9}$/.test(cellContent) || /^[\d\s\-+()\/\.,:]+$/.test(cellContent)) {
+  // For ID numbers, phone numbers, dates, and numeric content - ensure correct direction
+  if (/^\d{5,9}$/.test(cellContent) || /^0\d{1,2}[\-\s]?\d{7,8}$/.test(cellContent) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(cellContent) || /^[\d\s\-+()\/\.,:]+$/.test(cellContent)) {
     cell.text = [forceLtrDirection(cellContent)];
   }
   // For Hebrew text cells, use our formatPdfField function

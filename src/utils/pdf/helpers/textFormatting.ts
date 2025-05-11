@@ -36,11 +36,13 @@ export const formatPdfField = (text: string | number): string => {
   // - Hebrew text already displays correctly (RTL)
   // - Numbers need explicit RTL marks to display correctly
   if (isNumeric && !containsHebrew) {
-    // Use RLM (U+200F) for numbers to ensure they display correctly in RTL context
-    // Reverse the text to correct the display order
-    return '\u200F' + reverseString(textStr) + '\u200F';
+    // Use LRM (U+200E) for numbers to ensure they display correctly in RTL context
+    return '\u200E' + textStr + '\u200E';
+  } else if (containsHebrew) {
+    // Hebrew text - reverse it to correct display in global RTL
+    return reverseString(textStr);
   } else {
-    // Hebrew text or mixed content - reverse it to correct display in global RTL
+    // Non-Hebrew, non-numeric text - reverse for correct display in global RTL
     return reverseString(textStr);
   }
 };
@@ -53,9 +55,8 @@ export const forceLtrDirection = (text: string | number): string => {
   
   const textStr = String(text);
   
-  // In RTL context, use RLM (U+200F) to ensure proper display of numeric content
-  // Reverse the text to correct the display order
-  return '\u200F' + reverseString(textStr) + '\u200F';
+  // Use LRM (U+200E) to ensure proper display of numeric content in RTL context
+  return '\u200E' + textStr + '\u200E';
 };
 
 /**

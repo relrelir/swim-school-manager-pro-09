@@ -51,6 +51,14 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
       isCurrency: false 
     };
   }
+  // Phone numbers - need LTR in RTL context
+  else if (/^0\d{1,2}[\-\s]?\d{7,8}$/.test(content)) {
+    return {
+      text: forceLtrDirection(content),
+      isRtl: false,
+      isCurrency: false
+    };
+  }
   // Pure numbers - need LTR in RTL context
   else if (/^[0-9\s\-\.\/]+$/.test(content)) {
     return { 

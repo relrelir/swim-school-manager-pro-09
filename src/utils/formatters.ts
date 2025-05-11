@@ -163,4 +163,3 @@ export const formatMeetingCount = (current: number, total: number): string => {
 export const formatMeetingCountForUI = (current: number, total: number): string => {
   return `${current}/${total}`;
 };
-
