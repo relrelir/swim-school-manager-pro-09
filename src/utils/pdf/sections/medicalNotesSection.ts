@@ -18,19 +18,21 @@ export function addMedicalNotesSection(
   currentY += 8;
   pdf.setFontSize(12);
   
-  // Create a box for notes
-  const notesHeight = 20;
+  // Create a smaller box for notes
+  const notesHeight = 15; // Reduced height
   pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
   
   // Display notes or default message
   if (notes && notes !== '') {
     // If there are actual medical notes
-    pdf.text(notes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
+    const textWidth = pageWidth - (2 * margin) - 10; // 5px padding on each side
+    const wrappedText = pdf.splitTextToSize(notes, textWidth);
+    pdf.text(wrappedText, pageWidth - margin - 5, currentY + 7, { align: 'right' });
   } else {
     // If no notes
     pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
   }
   
-  // Add space after notes
-  return currentY + notesHeight + 10;
+  // Add space after notes - reduced spacing
+  return currentY + notesHeight + 8;
 }
