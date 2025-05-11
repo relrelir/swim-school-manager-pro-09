@@ -69,14 +69,14 @@ export function buildHealthDeclarationPDF(
     // Add declaration content section
     currentY = addDeclarationContentSection(pdf, currentY, margin);
     
-    // Add signature section - moved up before medical notes
-    currentY = addSignatureSection(pdf, currentY, margin, healthDeclaration.signature);
-
     // Add medical notes section
     currentY = addMedicalNotesSection(pdf, currentY, margin, healthDeclaration.notes);
 
-    // Add confirmation section
+    // Add confirmation section 
     currentY = addConfirmationSection(pdf, currentY, margin);
+    
+    // Add signature section - moved AFTER confirmation section
+    currentY = addSignatureSection(pdf, currentY, margin, healthDeclaration.signature);
     
     // Return the filename with clean formatting
     const cleanName = participant.fullName.replace(/\s+/g, '_');
