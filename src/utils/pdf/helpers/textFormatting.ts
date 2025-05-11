@@ -34,14 +34,18 @@ export const formatPdfField = (text: string | number): string => {
   
   // In a globally RTL document:
   // - Hebrew text already displays correctly (RTL)
-  // - Numbers need explicit RTL marks to display correctly
+  // - Numbers need to remain LTR (not reversed)
   if (isNumeric && !containsHebrew) {
-    // Use RLM (U+200F) for numbers to ensure they display correctly in RTL context
-    // Reverse the text to correct the display order
-    return '\u200F' + reverseString(textStr) + '\u200F';
+    // For numbers, we want to preserve their natural LTR direction
+    // Do NOT reverse numeric content - that was causing the issue
+    return textStr;
+  } else if (containsHebrew) {
+    // Hebrew text displays correctly with global RTL
+    return textStr;
   } else {
-    // Hebrew text or mixed content - reverse it to correct display in global RTL
-    return reverseString(textStr);
+    // Non-Hebrew, non-numeric text (e.g., English)
+    // Should generally be LTR in the RTL context
+    return textStr;
   }
 };
 
@@ -53,9 +57,9 @@ export const forceLtrDirection = (text: string | number): string => {
   
   const textStr = String(text);
   
-  // In RTL context, use RLM (U+200F) to ensure proper display of numeric content
-  // Reverse the text to correct the display order
-  return '\u200F' + reverseString(textStr) + '\u200F';
+  // For numeric content, preserve natural LTR direction
+  // Do NOT reverse numeric content - that was causing the issue
+  return textStr;
 };
 
 /**
@@ -64,8 +68,8 @@ export const forceLtrDirection = (text: string | number): string => {
 export const forceRtlDirection = (text: string): string => {
   if (text === null || text === undefined) return '';
   
-  // Reverse Hebrew text to correct display in global RTL context
-  return reverseString(text);
+  // Hebrew text displays correctly with global RTL
+  return text;
 };
 
 /**
