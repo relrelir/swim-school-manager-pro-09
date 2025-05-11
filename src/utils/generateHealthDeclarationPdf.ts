@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createRtlPdf } from './pdf/pdfConfig';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
+import { parseParentInfo } from './pdf/healthDeclarationParser';
 
 // Define an interface for the health declaration data
 interface HealthDeclarationData {
@@ -12,8 +13,6 @@ interface HealthDeclarationData {
   notes: string | null;
   form_status: string;
   signature: string | null;
-  parent_name?: string | null;
-  parent_id?: string | null;
 }
 
 export const generateHealthDeclarationPdf = async (participantId: string) => {
@@ -46,15 +45,20 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     console.log("Participant data fetched successfully:", participant);
     
     // 2. Get health declaration data (if exists)
-    let { data: healthDeclaration, error: healthDeclarationError } = await supabase
+    const { data: healthDeclaration, error: healthDeclarationError } = await supabase
       .from('health_declarations')
-      .select('id, participant_id, submission_date, notes, form_status, signature, parent_name, parent_id')
+      .select('id, participant_id, submission_date, notes, form_status, signature')
       .eq('participant_id', participantId)
       .maybeSingle();
     
-    // Try to extract parent info from notes if not explicitly available
-    let parentName = null;
-    let parentId = null;
+    if (healthDeclarationError && healthDeclarationError.code !== 'PGRST116') {
+      // Log only if it's not the "no rows returned" error
+      console.error("Error fetching health declaration:", healthDeclarationError);
+    } else if (healthDeclaration) {
+      console.log("Found health declaration:", healthDeclaration.id);
+    } else {
+      console.log("No health declaration found, using default object");
+    }
     
     // If no health declaration exists, create a default object for PDF generation
     const defaultDeclaration: HealthDeclarationData = {
@@ -63,42 +67,10 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       submission_date: new Date().toISOString(),
       notes: null,
       form_status: 'pending',
-      signature: null,
-      parent_name: null,
-      parent_id: null
+      signature: null
     };
     
-    const declarationData: HealthDeclarationData = healthDeclaration || defaultDeclaration;
-    
-    // Extract parent info from notes if not in dedicated fields
-    if (declarationData.notes && (!declarationData.parent_name || !declarationData.parent_id)) {
-      const notesText = declarationData.notes;
-      
-      // Look for parent name in the notes
-      const parentNameMatch = notesText.match(/שם הורה:?\s*([^,\n]+)/i);
-      if (parentNameMatch && parentNameMatch[1]) {
-        parentName = parentNameMatch[1].trim();
-      }
-      
-      // Look for parent ID in the notes
-      const parentIdMatch = notesText.match(/ת\.ז\.\s*הורה:?\s*([^,\n]+)/i);
-      if (parentIdMatch && parentIdMatch[1]) {
-        parentId = parentIdMatch[1].trim();
-      }
-      
-      // Merge with declaration data if found
-      if (parentName) declarationData.parent_name = parentName;
-      if (parentId) declarationData.parent_id = parentId;
-    }
-    
-    if (healthDeclarationError && healthDeclarationError.code !== 'PGRST116') {
-      // Log only if it's not the "no rows returned" error
-      console.error("Error fetching health declaration:", healthDeclarationError);
-    } else if (healthDeclaration) {
-      console.log("Found health declaration:", declarationData.id);
-    } else {
-      console.log("No health declaration found, using default object");
-    }
+    const declarationData = healthDeclaration || defaultDeclaration;
     
     try {
       // Create the PDF document with RTL and font support
@@ -106,9 +78,16 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       const pdf = await createRtlPdf();
       console.log("PDF object created successfully");
       
+      // Extract parent information from notes
+      const { parentName, parentId } = parseParentInfo(declarationData.notes);
+      
       // Build the PDF content with improved layout
       console.log("Building PDF content");
-      const fileName = buildHealthDeclarationPDF(pdf, declarationData, {
+      const fileName = buildHealthDeclarationPDF(pdf, {
+        ...declarationData,
+        parent_name: parentName,
+        parent_id: parentId
+      }, {
         ...participant,
         fullName,
       });

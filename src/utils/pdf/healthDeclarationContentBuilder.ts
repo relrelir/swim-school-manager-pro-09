@@ -101,7 +101,7 @@ export function buildHealthDeclarationPDF(
     // Participant Information Table
     addSectionHeader('פרטי המשתתף');
     createTable(
-      ['שם מלא', 'אריאל דוזנבּרּג'], // Headers
+      ['שם מלא', participant.fullName || ''], // Headers
       [
         ['תעודת זהות', participant.idnumber || ''],
         ['טלפון', participant.phone || '']
@@ -111,21 +111,13 @@ export function buildHealthDeclarationPDF(
     // Parent/Guardian Information Table
     addSectionHeader('פרטי ההורה/אפוטרופוס');
     
-    // Parse parent name and ID from notes if available
-    let parentName = '';
-    let parentId = '';
-    
-    if (healthDeclaration.parent_name) {
-      parentName = healthDeclaration.parent_name;
-    }
-    
-    if (healthDeclaration.parent_id) {
-      parentId = healthDeclaration.parent_id;
-    }
+    // Use parent info from healthDeclaration
+    const parentName = healthDeclaration.parent_name || '';
+    const parentId = healthDeclaration.parent_id || '';
     
     createTable(
-      ['שם מלא', parentName || 'אריאל דוזנבּרּג'], // Headers
-      [['תעודת זהות', parentId || '']]
+      ['שם מלא', parentName], // Headers
+      [['תעודת זהות', parentId]]
     );
 
     // Declaration Content
@@ -159,20 +151,21 @@ export function buildHealthDeclarationPDF(
     const notesHeight = 20;
     pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
     
+    // Extract only medical notes (removing parent info)
+    let medicalNotes = '';
     if (healthDeclaration.notes) {
-      const cleanedNotes = healthDeclaration.notes
-        .replace(/הורה\/אפוטרופוס:?/g, '')
-        .replace(/שם הורה:?/g, '')
-        .replace(/ת\.ז\. הורה:?/g, '')
+      // Remove parent info sections from notes
+      medicalNotes = healthDeclaration.notes
+        .replace(/שם הורה:?\s*[^,\n]+/g, '')
+        .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
+        .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
+        .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
         .trim();
-      
+    }
+    
+    if (medicalNotes && medicalNotes !== '') {
       // If there are actual medical notes
-      if (cleanedNotes && cleanedNotes !== '') {
-        pdf.text(cleanedNotes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
-      } else {
-        // If no notes
-        pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
-      }
+      pdf.text(medicalNotes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
     } else {
       // If no notes
       pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });

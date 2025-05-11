@@ -13,13 +13,13 @@ export const parseParentInfo = (notes: string | null): { parentName: string; par
   let parentName = '';
   let parentId = '';
   
-  // Try to extract parent name
+  // Try to extract parent name with improved pattern matching
   const parentNameMatch = cleanedNotes.match(/(?:שם הורה|הורה\/אפוטרופוס):?\s*([^,\n]+)/i);
   if (parentNameMatch && parentNameMatch[1]) {
     parentName = parentNameMatch[1].trim();
   }
   
-  // Try to extract parent ID
+  // Try to extract parent ID with improved pattern matching
   const parentIdMatch = cleanedNotes.match(/(?:ת\.ז\.\s*הורה|ת\.ז\.|תעודת זהות):?\s*([^,\n]+)/i);
   if (parentIdMatch && parentIdMatch[1]) {
     parentId = parentIdMatch[1].trim();
