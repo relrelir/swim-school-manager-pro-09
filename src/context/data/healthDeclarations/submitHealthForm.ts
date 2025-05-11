@@ -26,12 +26,13 @@ export const submitHealthFormService = async (
       submission_date: string;
       signature: string | null;
       parent_name: string | null;
-      notes?: string | null;
+      notes: string | null;
     } = {
       form_status: 'signed',
       submission_date: new Date().toISOString(),
       signature: signature || null,
       parent_name: parentName || null,
+      notes: null
     };
 
     // Combine parentId info and notes if available
