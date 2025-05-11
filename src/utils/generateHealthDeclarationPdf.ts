@@ -25,21 +25,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       throw new Error('מזהה המשתתף חסר או לא תקין');
     }
     
-    // 1. Get the registration using participant ID
-    const { data: registration, error: registrationError } = await supabase
-      .from('registrations')
-      .select('*')
-      .eq('participantid', participantId)
-      .maybeSingle();
-      
-    if (registrationError || !registration) {
-      console.error("Registration details not found:", registrationError);
-      throw new Error('פרטי הרישום לא נמצאו');
-    }
-    
-    console.log("Found registration:", registration);
-    
-    // 2. Get participant details using the participantId
+    // 1. Get the participant details using the participantId
     const { data: participant, error: participantError } = await supabase
       .from('participants')
       .select('firstname, lastname, idnumber, phone')
@@ -57,14 +43,18 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
 
     const fullName = `${participant.firstname} ${participant.lastname}`.trim();
     
-    console.log("Data fetched successfully. Participant:", participant);
+    console.log("Participant data fetched successfully:", participant);
     
-    // 3. Get health declaration data (if exists)
+    // 2. Get health declaration data (if exists)
     let { data: healthDeclaration, error: healthDeclarationError } = await supabase
       .from('health_declarations')
-      .select('id, participant_id, submission_date, notes, form_status, signature')
+      .select('id, participant_id, submission_date, notes, form_status, signature, parent_name, parent_id')
       .eq('participant_id', participantId)
       .maybeSingle();
+    
+    // Try to extract parent info from notes if not explicitly available
+    let parentName = null;
+    let parentId = null;
     
     // If no health declaration exists, create a default object for PDF generation
     const defaultDeclaration: HealthDeclarationData = {
@@ -79,6 +69,27 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     };
     
     const declarationData: HealthDeclarationData = healthDeclaration || defaultDeclaration;
+    
+    // Extract parent info from notes if not in dedicated fields
+    if (declarationData.notes && (!declarationData.parent_name || !declarationData.parent_id)) {
+      const notesText = declarationData.notes;
+      
+      // Look for parent name in the notes
+      const parentNameMatch = notesText.match(/שם הורה:?\s*([^,\n]+)/i);
+      if (parentNameMatch && parentNameMatch[1]) {
+        parentName = parentNameMatch[1].trim();
+      }
+      
+      // Look for parent ID in the notes
+      const parentIdMatch = notesText.match(/ת\.ז\.\s*הורה:?\s*([^,\n]+)/i);
+      if (parentIdMatch && parentIdMatch[1]) {
+        parentId = parentIdMatch[1].trim();
+      }
+      
+      // Merge with declaration data if found
+      if (parentName) declarationData.parent_name = parentName;
+      if (parentId) declarationData.parent_id = parentId;
+    }
     
     if (healthDeclarationError && healthDeclarationError.code !== 'PGRST116') {
       // Log only if it's not the "no rows returned" error

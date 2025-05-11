@@ -1,8 +1,8 @@
 
 // Import only what's needed to be added or modified
-// For the existing PDF content builder, make sure it accepts the right interface
 import jsPDF from 'jspdf';
 import { configureDocumentStyle } from './pdfConfig';
+import { getFormattedDate } from './pdfConfig';
 
 export function buildHealthDeclarationPDF(
   pdf: jsPDF, 
@@ -27,94 +27,200 @@ export function buildHealthDeclarationPDF(
   try {
     // Apply document style which includes Alef font setup
     configureDocumentStyle(pdf);
+    
     // Always ensure RTL mode is set
     pdf.setR2L(true);
-    pdf.setFontSize(14);
-
+    
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 10;
-    let currentY = 20; // Start a bit lower to make room for a title
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    let currentY = 20; // Start position for content
 
-    // Add title
+    // Add title - centered
     pdf.setFontSize(18);
-    pdf.text('הצהרת בריאות', pageWidth / 2, 10, { align: 'center' });
-    pdf.setFontSize(14);
+    pdf.text('הצהרת בריאות', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 15;
 
-    // Helper function to add text with proper RTL positioning
-    // Using align: 'right' to handle RTL text properly and avoid relying on getTextWidth
-    const addLine = (text: string, indent = 0) => {
-      try {
-        // Use the safer text positioning method with alignment
-        pdf.text(text, pageWidth - margin - indent, currentY, { align: 'right' });
-        currentY += 10;
-      } catch (error) {
-        console.warn('Error adding text to PDF:', error);
-        // We already use the safe method above, but just in case, repeat it
-        try {
-          pdf.text(text, pageWidth - margin - indent, currentY, { align: 'right' });
-          currentY += 10;
-        } catch (secondError) {
-          console.error('Critical error adding text to PDF:', secondError);
-          // Last resort - add text at fixed position
-          pdf.text(text, pageWidth / 2, currentY, { align: 'center' });
-          currentY += 10;
-        }
-      }
+    // Add date in top right corner
+    pdf.setFontSize(10);
+    const dateStr = healthDeclaration.submission_date ? 
+      new Date(healthDeclaration.submission_date).toLocaleDateString('he-IL') : 
+      getFormattedDate();
+    pdf.text(dateStr, pageWidth - margin, 10, { align: 'right' });
+    
+    // Reset font size for content
+    pdf.setFontSize(12);
+
+    // Create section header
+    const addSectionHeader = (text: string) => {
+      pdf.setFontSize(14);
+      pdf.text(text, pageWidth - margin, currentY, { align: 'right' });
+      currentY += 8;
+      pdf.setFontSize(12);
     };
 
-    // Add participant information section
-    addLine(`שם מלא: ${participant.fullName}`);
-    addLine(`תעודת זהות: ${participant.idnumber}`);
-    addLine(`טלפון: ${participant.phone}`);
-    
-    // Add a separator line
-    currentY += 5;
-    pdf.line(margin, currentY - 2, pageWidth - margin, currentY - 2);
-    currentY += 5;
-    
-    // Add declaration information
-    addLine(`הצהרת בריאות מספר: ${healthDeclaration.id}`);
-    addLine(`תאריך הצהרה: ${healthDeclaration.submission_date || 'לא צוין'}`);
-    addLine(`סטטוס: ${healthDeclaration.form_status}`);
-
-    // Parse parent information from notes if available
-    if (healthDeclaration.notes) {
-      // Add notes header
-      currentY += 5;
-      pdf.setFontSize(16);
-      addLine('פרטי הצהרה:');
-      pdf.setFontSize(14);
+    // Create table with 2 columns
+    const createTable = (headers: string[], rows: string[][], rowHeight: number = 10) => {
+      const tableWidth = pageWidth - (2 * margin);
+      const colWidth = tableWidth / 2;
       
-      // Add actual notes with some indentation
-      const notesLines = healthDeclaration.notes.split('\n');
-      notesLines.forEach(line => {
-        if (line.trim()) {
-          addLine(line, 5);
-        } else {
-          currentY += 5; // Add some space for empty lines
-        }
+      // Draw table headers
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margin, currentY, tableWidth, rowHeight, 'FD');
+      
+      // Add header text
+      pdf.setFont('Alef', 'bold');
+      pdf.text(headers[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      pdf.text(headers[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
+      
+      // Reset font
+      pdf.setFont('Alef', 'normal');
+      
+      // Move to next row
+      currentY += rowHeight;
+      
+      // Draw table rows
+      rows.forEach((row) => {
+        // Draw row rectangle
+        pdf.rect(margin, currentY, tableWidth, rowHeight);
+        // Draw column separator
+        pdf.line(margin + colWidth, currentY, margin + colWidth, currentY + rowHeight);
+        
+        // Add row text
+        pdf.text(row[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+        pdf.text(row[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
+        
+        // Move to next row
+        currentY += rowHeight;
       });
-    }
-
-    // Add signature section if available
-    if (healthDeclaration.signature) {
+      
+      // Add space after table
       currentY += 10;
-      addLine('חתימה:');
+    };
+    
+    // Participant Information Table
+    addSectionHeader('פרטי המשתתף');
+    createTable(
+      ['שם מלא', 'אריאל דוזנבּרּג'], // Headers
+      [
+        ['תעודת זהות', participant.idnumber || ''],
+        ['טלפון', participant.phone || '']
+      ]
+    );
+
+    // Parent/Guardian Information Table
+    addSectionHeader('פרטי ההורה/אפוטרופוס');
+    
+    // Parse parent name and ID from notes if available
+    let parentName = '';
+    let parentId = '';
+    
+    if (healthDeclaration.parent_name) {
+      parentName = healthDeclaration.parent_name;
+    }
+    
+    if (healthDeclaration.parent_id) {
+      parentId = healthDeclaration.parent_id;
+    }
+    
+    createTable(
+      ['שם מלא', parentName || 'אריאל דוזנבּרּג'], // Headers
+      [['תעודת זהות', parentId || '']]
+    );
+
+    // Declaration Content
+    addSectionHeader('תוכן ההצהרה');
+    
+    // Create a box for the declaration content
+    const declarationText = [
+      '• אני מצהיר/ה בזאת כי בני/בתי/אני נמצא/ת בכושר ובמצב בריאותי תקין/מסוגל להשתתף בפעילות.',
+      '• בהצהרה זו הנני מתחייב/ת, כי אם יחול שינוי במצבו/ה הבריאותי, אעדכן אותך באופן מיידי.',
+      '• אני מתחייב/ת לדווח לך על כל שינוי במצב הבריאותי.',
+      '• אני מאשר/ת לגופכם הרפואי לטפל באופן ראשוני במקרה הצורך.',
+      '• ידוע לי שאחריות בריאותו של בני/בתי חלה עלי בכל ההשתתפות בפעילות.'
+    ];
+    
+    // Draw a box for declaration content
+    pdf.rect(margin, currentY, pageWidth - (2 * margin), declarationText.length * 10 + 10);
+    currentY += 8;
+    
+    // Add the bullet points
+    declarationText.forEach(text => {
+      pdf.text(text, pageWidth - margin - 5, currentY, { align: 'right' });
+      currentY += 10;
+    });
+    
+    currentY += 8;
+
+    // Medical Notes Section (if any)
+    addSectionHeader('הערות רפואיות');
+    
+    // Create a box for notes
+    const notesHeight = 20;
+    pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
+    
+    if (healthDeclaration.notes) {
+      const cleanedNotes = healthDeclaration.notes
+        .replace(/הורה\/אפוטרופוס:?/g, '')
+        .replace(/שם הורה:?/g, '')
+        .replace(/ת\.ז\. הורה:?/g, '')
+        .trim();
+      
+      // If there are actual medical notes
+      if (cleanedNotes && cleanedNotes !== '') {
+        pdf.text(cleanedNotes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      } else {
+        // If no notes
+        pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      }
+    } else {
+      // If no notes
+      pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
+    }
+    
+    currentY += notesHeight + 10;
+    
+    // Confirmation Section
+    addSectionHeader('אישור');
+    
+    // Create a box for confirmation
+    const confirmationHeight = 20;
+    pdf.rect(margin, currentY, pageWidth - (2 * margin), confirmationHeight);
+    
+    pdf.text('אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.', pageWidth - margin - 5, currentY + 10, { align: 'right' });
+    
+    currentY += confirmationHeight + 10;
+
+    // Signature Section
+    addSectionHeader('חתימה');
+    
+    // Add signature if available
+    if (healthDeclaration.signature) {
       try {
-        // Add the signature image if available
+        // Calculate signature dimensions - maintain aspect ratio but limit width
+        const maxSignatureWidth = 100;
+        const signatureHeight = 40;
+        
+        // Add the signature image
         pdf.addImage(
           healthDeclaration.signature,
           'PNG',
-          pageWidth - 80, // X position
-          currentY,       // Y position
-          70,             // Width
-          40              // Height
+          (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
+          currentY,
+          maxSignatureWidth,
+          signatureHeight
         );
-        currentY += 45;
+        
+        currentY += signatureHeight + 10;
       } catch (error) {
         console.warn('Failed to add signature image to PDF:', error);
-        addLine('(חתימה דיגיטלית)');
+        // Add a line for manual signature if the image fails
+        pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
       }
+    } else {
+      // Add a line for manual signature if no digital signature
+      pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
+      currentY += 20;
     }
     
     // Return the filename with clean formatting
