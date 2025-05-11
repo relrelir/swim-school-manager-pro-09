@@ -4,6 +4,18 @@ import { createRtlPdf } from './pdf/pdfConfig';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
 
+// Define an interface for the health declaration data
+interface HealthDeclarationData {
+  id: string;
+  participant_id: string;
+  submission_date: string | null;
+  notes: string | null;
+  form_status: string;
+  signature: string | null;
+  parent_name?: string | null;
+  parent_id?: string | null;
+}
+
 export const generateHealthDeclarationPdf = async (participantId: string) => {
   try {
     console.log("Starting health declaration PDF generation for participant ID:", participantId);
@@ -50,25 +62,31 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     // 3. Get health declaration data (if exists)
     let { data: healthDeclaration, error: healthDeclarationError } = await supabase
       .from('health_declarations')
-      .select('id, participant_id, submission_date, notes, form_status, signature, parent_name, parent_id')
+      .select('id, participant_id, submission_date, notes, form_status, signature')
       .eq('participant_id', participantId)
-      .single();
+      .maybeSingle();
     
     // If no health declaration exists, create a default object for PDF generation
-    if (healthDeclarationError || !healthDeclaration) {
-      healthDeclaration = {
-        id: '',
-        participant_id: participantId,
-        submission_date: null,
-        notes: null,
-        form_status: 'pending',
-        signature: null,
-        parent_name: null,
-        parent_id: null
-      };
-      console.log("No health declaration found, using default object");
+    const defaultDeclaration: HealthDeclarationData = {
+      id: '',
+      participant_id: participantId,
+      submission_date: null,
+      notes: null,
+      form_status: 'pending',
+      signature: null,
+      parent_name: null,
+      parent_id: null
+    };
+    
+    const declarationData: HealthDeclarationData = healthDeclaration || defaultDeclaration;
+    
+    if (healthDeclarationError && healthDeclarationError.code !== 'PGRST116') {
+      // Log only if it's not the "no rows returned" error
+      console.error("Error fetching health declaration:", healthDeclarationError);
+    } else if (healthDeclaration) {
+      console.log("Found health declaration:", declarationData.id);
     } else {
-      console.log("Found health declaration:", healthDeclaration.id);
+      console.log("No health declaration found, using default object");
     }
     
     try {
@@ -79,7 +97,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       
       // Build the PDF content with improved layout
       console.log("Building PDF content");
-      const fileName = buildHealthDeclarationPDF(pdf, healthDeclaration, {
+      const fileName = buildHealthDeclarationPDF(pdf, declarationData, {
         ...participant,
         fullName,
       });

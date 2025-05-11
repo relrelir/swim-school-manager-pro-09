@@ -107,29 +107,34 @@ export const useHealthDeclarationsProvider = () => {
         .eq('participant_id', participantId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        if (error.code === 'PGRST116') {  // No rows returned error
-          console.log('No health declaration found for this registration');
-          return undefined;
-        }
         console.error('Error getting health declaration:', error);
         return undefined;
       }
       
+      if (!data) {
+        console.log('No health declaration found for this registration');
+        return undefined;
+      }
+      
       // Convert from DB format to our TypeScript model
-      return data ? {
+      return {
         id: data.id,
-        participantId: data.participant_id,
+        participant_id: data.participant_id,
         token: data.token,
-        formStatus: data.form_status,
-        submissionDate: data.submission_date,
-        createdAt: data.created_at,
+        form_status: data.form_status,
+        submission_date: data.submission_date,
+        created_at: data.created_at,
         notes: data.notes,
         signature: data.signature,
-        updatedAt: data.updated_at
-      } as HealthDeclaration : undefined;
+        // Add convenience fields for use in our code
+        registrationId: data.participant_id,
+        formStatus: data.form_status,
+        submissionDate: data.submission_date,
+        sentAt: data.created_at
+      } as HealthDeclaration;
     } catch (error) {
       console.error('Error getting health declaration for registration:', error);
       return undefined;
