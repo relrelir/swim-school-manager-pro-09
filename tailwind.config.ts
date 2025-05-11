@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -66,9 +65,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring, var(--ring)))'
 				},
 				status: {
-					paid: 'hsl(134, 61%, 41%)',      // ירוק לתשלום מלא
-					partial: 'hsl(48, 100%, 52%)',   // צהוב לתשלום חלקי
-					overdue: 'hsl(0, 84%, 60%)',     // אדום לחוב
+					paid: 'hsl(130, 60%, 50%)',      // ירוק מעודן לתשלום מלא
+					partial: 'hsl(45, 90%, 65%)',     // צהוב מעודן לתשלום חלקי
+					overdue: 'hsl(0, 70%, 65%)',      // אדום מעודן לחוב
 				},
 				warning: {
 					DEFAULT: 'hsl(var(--warning))',
@@ -89,9 +88,9 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
-				'card': '0 4px 12px rgba(0, 0, 0, 0.05)',
-				'card-hover': '0 8px 16px rgba(0, 0, 0, 0.1)',
-				'navbar': '0 1px 3px rgba(0, 0, 0, 0.1)',
+				'card': '0 4px 15px rgba(0, 0, 0, 0.04)',
+				'card-hover': '0 8px 20px rgba(0, 0, 0, 0.08)',
+				'navbar': '0 1px 5px rgba(0, 0, 0, 0.05)',
 			},
 			keyframes: {
 				'accordion-down': {

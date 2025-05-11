@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Alef:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -7,89 +6,89 @@
  
 @layer base {
   :root {
-    /* שורשי מערכת העיצוב - בסיס צבעים */
-    --background: 210 33% 99%;
-    --foreground: 210 25% 10%;
+    /* פלטת צבעים רגועה ומוכרת יותר */
+    --background: 210 40% 98%;
+    --foreground: 210 25% 15%;
     
     /* צבעי כרטיס */
     --card: 0 0% 100%;
-    --card-foreground: 210 25% 10%;
+    --card-foreground: 210 25% 15%;
     
     /* צבעי חלונית */
     --popover: 0 0% 100%;
-    --popover-foreground: 210 25% 10%;
+    --popover-foreground: 210 25% 15%;
     
-    /* צבעי מותג ראשיים */
-    --primary: 199 100% 33%; /* #006CA9 */
+    /* צבעי מותג ראשיים - כחול רך יותר */
+    --primary: 210 90% 45%; /* כחול רך */
     --primary-foreground: 210 40% 98%;
-    --primary-hover: 199 100% 28%; 
+    --primary-hover: 210 90% 40%; 
     
-    /* צבעי מותג משניים */
-    --secondary: 196 100% 42%; /* #0096D6 */
-    --secondary-foreground: 210 40% 98%;
-    --secondary-hover: 196 100% 37%;
+    /* צבעי מותג משניים - תכלת עדין */
+    --secondary: 195 80% 75%; /* תכלת עדין */
+    --secondary-foreground: 210 25% 15%;
+    --secondary-hover: 195 80% 70%;
     
     /* צבעי רקע משניים */
-    --muted: 210 20% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 30% 95%;
+    --muted-foreground: 215 25% 45%;
     
     /* צבעי הדגשה */
-    --accent: 199 100% 33%;
+    --accent: 210 90% 45%;
     --accent-foreground: 210 40% 98%;
     
-    /* צבעי התראות */
-    --destructive: 0 84.2% 60.2%; /* #DC3545 */
+    /* צבעי התראות - מעודנים יותר */
+    --destructive: 0 70% 65%; /* אדום מעודן */
     --destructive-foreground: 210 40% 98%;
-    --warning: 48 100% 52%; /* #FFC107 */
-    --warning-foreground: 210 25% 10%;
-    --success: 134 61% 41%; /* #28A745 */
+    --warning: 45 90% 65%; /* צהוב מעודן */
+    --warning-foreground: 210 25% 15%;
+    --success: 130 60% 50%; /* ירוק מעודן */
     --success-foreground: 210 40% 98%;
     
     /* צבעי גבולות ואינטראקציה */
-    --border: 214.3 31.8% 91.4%; /* #F8FAFC */
-    --input: 214.3 31.8% 91.4%;
-    --ring: 199 100% 33%;
+    --border: 214 30% 90%; /* גבולות עדינים יותר */
+    --input: 214 30% 90%;
+    --ring: 210 90% 45%;
     --radius: 0.5rem;
     
-    /* סטטוס תשלום */
-    --status-paid: 134, 61%, 85%; /* ירוק בהיר */
-    --status-partial: 48, 100%, 89%; /* צהוב בהיר */
-    --status-overdue: 0, 84%, 89%; /* אדום בהיר */
+    /* סטטוס תשלום - צבעים מעודנים */
+    --status-paid: 130, 60%, 85%; /* ירוק בהיר מעודן */
+    --status-partial: 45, 90%, 89%; /* צהוב בהיר מעודן */
+    --status-overdue: 0, 70%, 89%; /* אדום בהיר מעודן */
   }
  
   .dark {
-    --background: 210 25% 10%;
+    --background: 210 30% 15%;
     --foreground: 210 40% 98%;
     
-    --card: 210 25% 10%;
+    --card: 210 30% 15%;
     --card-foreground: 210 40% 98%;
     
-    --popover: 210 25% 10%;
+    --popover: 210 30% 15%;
     --popover-foreground: 210 40% 98%;
     
-    --primary: 199 100% 40%; /* כחול בהיר יותר לדרק מוד */
-    --primary-foreground: 210 25% 10%;
+    --primary: 210 90% 55%; /* כחול בהיר יותר לדרק מוד */
+    --primary-foreground: 210 30% 15%;
     
-    --secondary: 196 100% 50%;
-    --secondary-foreground: 210 25% 10%;
+    --secondary: 195 80% 60%;
+    --secondary-foreground: 210 30% 15%;
     
-    --muted: 210 20% 20%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 210 25% 25%;
+    --muted-foreground: 215 25% 70%;
     
-    --accent: 199 100% 40%;
-    --accent-foreground: 210 25% 10%;
+    --accent: 210 90% 55%;
+    --accent-foreground: 210 30% 15%;
     
-    --destructive: 0 84.2% 65%; /* בהיר יותר בדארק מוד */
-    --destructive-foreground: 210 25% 10%;
+    --destructive: 0 70% 65%; /* מותאם לדארק מוד */
+    --destructive-foreground: 210 30% 15%;
     
-    --border: 210 20% 20%;
-    --input: 210 20% 20%;
-    --ring: 199 100% 40%;
+    --border: 210 25% 25%;
+    --input: 210 25% 25%;
+    --ring: 210 90% 55%;
     
     /* סטטוס תשלום - דארק מוד */
-    --status-paid: 134, 51%, 35%;
-    --status-partial: 48, 90%, 40%;
-    --status-overdue: 0, 74%, 40%;
+    --status-paid: 130, 50%, 35%;
+    --status-partial: 45, 85%, 40%;
+    --status-overdue: 0, 70%, 40%;
   }
 }
 
@@ -158,7 +157,7 @@ h3 {
 
 .hover-effect:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* אנימציות כניסה ויציאה */
