@@ -4,6 +4,16 @@ import jsPDF from 'jspdf';
 import { configureDocumentStyle } from './pdfConfig';
 import { getFormattedDate } from './pdfConfig';
 
+// Import section utilities
+import { addTitleSection } from './sections/titleSection';
+import { addDateSection } from './sections/dateSection';
+import { addParticipantSection } from './sections/participantSection';
+import { addParentSection } from './sections/parentSection';
+import { addDeclarationContentSection } from './sections/declarationContentSection';
+import { addMedicalNotesSection } from './sections/medicalNotesSection';
+import { addConfirmationSection } from './sections/confirmationSection';
+import { addSignatureSection } from './sections/signatureSection';
+
 export function buildHealthDeclarationPDF(
   pdf: jsPDF, 
   healthDeclaration: {
@@ -31,180 +41,42 @@ export function buildHealthDeclarationPDF(
     // Always ensure RTL mode is set
     pdf.setR2L(true);
     
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 20;
     let currentY = 20; // Start position for content
 
-    // Add title - centered
-    pdf.setFontSize(18);
-    pdf.text('הצהרת בריאות', pageWidth / 2, currentY, { align: 'center' });
-    currentY += 15;
+    // Add title section
+    currentY = addTitleSection(pdf, currentY);
 
-    // Add date in top right corner
-    pdf.setFontSize(10);
+    // Add date section
     const dateStr = healthDeclaration.submission_date ? 
       new Date(healthDeclaration.submission_date).toLocaleDateString('he-IL') : 
       getFormattedDate();
-    pdf.text(dateStr, pageWidth - margin, 10, { align: 'right' });
+    addDateSection(pdf, currentY, margin, dateStr);
     
-    // Reset font size for content
-    pdf.setFontSize(12);
-
-    // Create section header
-    const addSectionHeader = (text: string) => {
-      pdf.setFontSize(14);
-      pdf.text(text, pageWidth - margin, currentY, { align: 'right' });
-      currentY += 8;
-      pdf.setFontSize(12);
-    };
-
-    // Create table with 2 columns
-    const createTable = (headers: string[], rows: string[][], rowHeight: number = 10) => {
-      const tableWidth = pageWidth - (2 * margin);
-      const colWidth = tableWidth / 2;
-      
-      // Draw table headers
-      pdf.setFillColor(240, 240, 240);
-      pdf.rect(margin, currentY, tableWidth, rowHeight, 'FD');
-      
-      // Add header text
-      pdf.setFont('Alef', 'bold');
-      pdf.text(headers[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
-      pdf.text(headers[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
-      
-      // Reset font
-      pdf.setFont('Alef', 'normal');
-      
-      // Move to next row
-      currentY += rowHeight;
-      
-      // Draw table rows
-      rows.forEach((row) => {
-        // Draw row rectangle
-        pdf.rect(margin, currentY, tableWidth, rowHeight);
-        // Draw column separator
-        pdf.line(margin + colWidth, currentY, margin + colWidth, currentY + rowHeight);
-        
-        // Add row text
-        pdf.text(row[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
-        pdf.text(row[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
-        
-        // Move to next row
-        currentY += rowHeight;
-      });
-      
-      // Add space after table
-      currentY += 10;
-    };
-    
-    // Participant Information Table
-    addSectionHeader('פרטי המשתתף');
-    createTable(
-      ['שם מלא', participant.fullName || ''], // Headers
-      [
-        ['תעודת זהות', participant.idnumber || ''],
-        ['טלפון', participant.phone || '']
-      ]
-    );
-
-    // Parent/Guardian Information Table
-    addSectionHeader('פרטי ההורה/אפוטרופוס');
-    
-    // Get parent info directly from the enhanced declaration data
-    const parentName = healthDeclaration.parent_name || '';
-    const parentId = healthDeclaration.parent_id || '';
-    
-    createTable(
-      ['שם מלא', parentName], // Header row
-      [['תעודת זהות', parentId]] // Data row
-    );
-
-    // Declaration Content
-    addSectionHeader('תוכן ההצהרה');
-    
-    // Create a box for the declaration content
-    const declarationText = [
-      '• אני מצהיר/ה בזאת כי בני/בתי/אני נמצא/ת בכושר ובמצב בריאותי תקין/מסוגל להשתתף בפעילות.',
-      '• בהצהרה זו הנני מתחייב/ת, כי אם יחול שינוי במצבו/ה הבריאותי, אעדכן אותך באופן מיידי.',
-      '• אני מתחייב/ת לדווח לך על כל שינוי במצב הבריאותי.',
-      '• אני מאשר/ת לגופכם הרפואי לטפל באופן ראשוני במקרה הצורך.',
-      '• ידוע לי שאחריות בריאותו של בני/בתי חלה עלי בכל ההשתתפות בפעילות.'
-    ];
-    
-    // Draw a box for declaration content
-    pdf.rect(margin, currentY, pageWidth - (2 * margin), declarationText.length * 10 + 10);
-    currentY += 8;
-    
-    // Add the bullet points
-    declarationText.forEach(text => {
-      pdf.text(text, pageWidth - margin - 5, currentY, { align: 'right' });
-      currentY += 10;
+    // Add participant information section
+    currentY = addParticipantSection(pdf, currentY, margin, {
+      fullName: participant.fullName || '',
+      idnumber: participant.idnumber || '',
+      phone: participant.phone || ''
     });
-    
-    currentY += 8;
 
-    // Medical Notes Section (if any)
-    addSectionHeader('הערות רפואיות');
-    
-    // Create a box for notes
-    const notesHeight = 20;
-    pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
-    
-    // Display only medical notes (parent info has already been removed by parseMedicalNotes)
-    if (healthDeclaration.notes && healthDeclaration.notes !== '') {
-      // If there are actual medical notes
-      pdf.text(healthDeclaration.notes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
-    } else {
-      // If no notes
-      pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
-    }
-    
-    currentY += notesHeight + 10;
-    
-    // Confirmation Section
-    addSectionHeader('אישור');
-    
-    // Create a box for confirmation
-    const confirmationHeight = 20;
-    pdf.rect(margin, currentY, pageWidth - (2 * margin), confirmationHeight);
-    
-    pdf.text('אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.', pageWidth - margin - 5, currentY + 10, { align: 'right' });
-    
-    currentY += confirmationHeight + 10;
+    // Add parent/guardian information section
+    currentY = addParentSection(pdf, currentY, margin, {
+      name: healthDeclaration.parent_name || '',
+      id: healthDeclaration.parent_id || ''
+    });
 
-    // Signature Section
-    addSectionHeader('חתימה');
+    // Add declaration content section
+    currentY = addDeclarationContentSection(pdf, currentY, margin);
     
-    // Add signature if available - improved positioning
-    if (healthDeclaration.signature) {
-      try {
-        // Calculate signature dimensions - better size
-        const maxSignatureWidth = 100;
-        const signatureHeight = 40;
-        
-        // Add the signature image - centered horizontally and higher on page
-        pdf.addImage(
-          healthDeclaration.signature,
-          'PNG',
-          (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
-          currentY,  // Position at current Y
-          maxSignatureWidth,
-          signatureHeight
-        );
-        
-        currentY += signatureHeight + 5; // Add space after signature
-      } catch (error) {
-        console.warn('Failed to add signature image to PDF:', error);
-        // Add a line for manual signature if the image fails
-        pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
-        currentY += 20;
-      }
-    } else {
-      // Add a line for manual signature if no digital signature
-      pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
-      currentY += 20;
-    }
+    // Add signature section - moved up before medical notes
+    currentY = addSignatureSection(pdf, currentY, margin, healthDeclaration.signature);
+
+    // Add medical notes section
+    currentY = addMedicalNotesSection(pdf, currentY, margin, healthDeclaration.notes);
+
+    // Add confirmation section
+    currentY = addConfirmationSection(pdf, currentY, margin);
     
     // Return the filename with clean formatting
     const cleanName = participant.fullName.replace(/\s+/g, '_');
