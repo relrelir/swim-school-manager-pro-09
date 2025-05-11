@@ -27,39 +27,16 @@ const HealthFormPage: React.FC = () => {
   } = useHealthForm();
 
   const [showSignaturePad, setShowSignaturePad] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAwaitingSignatureSubmit, setIsAwaitingSignatureSubmit] = useState(false);
-
-  // Effect to listen for signature changes and submit form when signature is received
-  useEffect(() => {
-    // Only proceed if we're waiting for a signature submission and have a signature
-    if (formState.signature && isAwaitingSignatureSubmit && !isSubmitting) {
-      const submitForm = async () => {
-        try {
-          setIsSubmitting(true);
-          // Create a fake event object for the form submission
-          const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-          await handleSubmit(fakeEvent);
-        } catch (error) {
-          console.error("Error submitting form:", error);
-        } finally {
-          setIsSubmitting(false);
-          setIsAwaitingSignatureSubmit(false);
-        }
-      };
-      
-      submitForm();
-    }
-  }, [formState.signature, isAwaitingSignatureSubmit, handleSubmit, isSubmitting]);
-
-  // Show error state
-  if (error) {
-    return <ErrorState error={error} />;
-  }
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   // Loading state
   if (isLoadingData) {
     return <LoadingState />;
+  }
+
+  // Show error state
+  if (error) {
+    return <ErrorState error={error} />;
   }
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -80,10 +57,27 @@ const HealthFormPage: React.FC = () => {
     setShowSignaturePad(true);
   };
 
-  const handleSignatureConfirm = (signatureData: string) => {
-    // Update form state with signature and flag that we're awaiting submission
-    handleSignatureChange(signatureData);
-    setIsAwaitingSignatureSubmit(true);
+  const handleSignatureConfirm = async (signatureData: string) => {
+    try {
+      // Update form state with signature
+      handleSignatureChange(signatureData);
+      
+      // Hide signature pad
+      setShowSignaturePad(false);
+      
+      // Create a fake event object for the form submission
+      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      
+      // Submit the form with the signature
+      await handleSubmit({
+        ...fakeEvent,
+        signature: signatureData
+      });
+      
+      setFormSubmitted(true);
+    } catch (error) {
+      console.error("Error during form submission:", error);
+    }
   };
 
   const handleCancelSignature = () => {
@@ -128,9 +122,9 @@ const HealthFormPage: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || formSubmitted}
               >
-                {isLoading || isSubmitting ? 'שולח...' : 'אישור הצהרה'}
+                {isLoading ? 'שולח...' : 'אישור הצהרה'}
               </Button>
             </CardFooter>
           </form>

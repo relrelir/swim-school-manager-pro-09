@@ -16,6 +16,7 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [signaturePad, setSignaturePad] = useState<SignaturePad | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -28,12 +29,13 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
       canvas.height = Math.min(container.clientWidth * 0.6, 300); // Adjust height based on width
     }
     
-    // Initialize signature pad
+    // Initialize signature pad with improved options
     const pad = new SignaturePad(canvas, {
       backgroundColor: 'rgba(255, 255, 255, 0)',
       penColor: 'black',
       minWidth: 1,
-      maxWidth: 2.5
+      maxWidth: 2.5,
+      velocityFilterWeight: 0.7 // Smoother lines
     });
     
     setSignaturePad(pad);
@@ -86,6 +88,8 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
   };
 
   const confirmSignature = () => {
+    if (isSubmitting) return;
+    
     if (!signaturePad) {
       setError('שגיאה בטעינת שדה החתימה');
       return;
@@ -96,9 +100,17 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
       return;
     }
     
-    // Get signature as data URL and pass to parent component
-    const dataUrl = signaturePad.toDataURL('image/png');
-    onSignatureConfirm(dataUrl);
+    try {
+      setIsSubmitting(true);
+      // Get signature as data URL with better quality
+      const dataUrl = signaturePad.toDataURL('image/png');
+      onSignatureConfirm(dataUrl);
+    } catch (err) {
+      console.error('Error processing signature:', err);
+      setError('אירעה שגיאה בעיבוד החתימה');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -125,6 +137,7 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
           type="button" 
           variant="outline" 
           onClick={clearSignature}
+          disabled={isSubmitting}
           className="flex items-center"
         >
           <RotateCcwIcon className="h-4 w-4 ml-2" />
@@ -135,10 +148,11 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
           type="button" 
           variant="default" 
           onClick={confirmSignature}
+          disabled={isSubmitting}
           className="flex items-center"
         >
           <CheckIcon className="h-4 w-4 ml-2" />
-          אשר חתימה
+          {isSubmitting ? 'מאשר...' : 'אשר חתימה'}
         </Button>
       </div>
       
@@ -147,6 +161,7 @@ const SignaturePadComponent: React.FC<SignaturePadProps> = ({
           type="button" 
           variant="ghost" 
           onClick={onCancel}
+          disabled={isSubmitting}
         >
           חזור לטופס
         </Button>

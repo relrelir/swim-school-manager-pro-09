@@ -85,7 +85,6 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
     setIsLoading(true);
     
     try {
-      // We'll pass the parentId separately but it will be added to the notes field
       await submitHealthFormService(
         healthDeclarationId,
         formState.agreement,
