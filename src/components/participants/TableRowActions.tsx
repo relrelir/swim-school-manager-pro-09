@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Registration } from '@/types';
@@ -78,7 +77,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
     }
   }, [registrationId]);
   
-  // Optimization: Use useCallback to prevent unnecessary rerenders
+  // Improved PDF generation function with better error handling
   const handlePrintHealthDeclaration = useCallback(async () => {
     if (!registration || !registrationId || !participantId) {
       console.error("Cannot generate PDF: Invalid registration", registration);
@@ -92,6 +91,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
     
     setIsGeneratingHealthPdf(true);
     try {
+      console.log("Starting health declaration PDF generation");
       await generateHealthDeclarationPdf(participantId);
       
       toast({
@@ -166,14 +166,14 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
         <TooltipContent>הורד אישור רישום</TooltipContent>
       </Tooltip>
       
-      {/* Health Declaration Print Button */}
+      {/* Health Declaration Print Button - Enable regardless of hasHealthDeclaration for previewing empty form */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePrintHealthDeclaration}
-            disabled={isGeneratingHealthPdf || !hasHealthDeclaration}
+            disabled={isGeneratingHealthPdf}
           >
             {isGeneratingHealthPdf ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -183,7 +183,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          {hasHealthDeclaration ? "הדפס הצהרת בריאות" : "אין הצהרת בריאות"}
+          {hasHealthDeclaration ? "הדפס הצהרת בריאות" : "הדפס טופס הצהרת בריאות"}
         </TooltipContent>
       </Tooltip>
       

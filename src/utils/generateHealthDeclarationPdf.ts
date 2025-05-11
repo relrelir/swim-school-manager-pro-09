@@ -104,9 +104,11 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
 
       console.log("PDF content built successfully, filename:", fileName);
       
-      // Save the PDF
-      pdf.save(fileName);
-      console.log("PDF saved successfully");
+      // Save the PDF - add timeout to ensure rendering is complete
+      setTimeout(() => {
+        pdf.save(fileName);
+        console.log("PDF saved successfully");
+      }, 100);
       
       toast({
         title: "PDF נוצר בהצלחה",
