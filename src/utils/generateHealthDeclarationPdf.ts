@@ -30,7 +30,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('registrations')
       .select('*')
       .eq('participantid', participantId)
-      .single();
+      .maybeSingle();
       
     if (registrationError || !registration) {
       console.error("Registration details not found:", registrationError);
@@ -44,7 +44,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('participants')
       .select('firstname, lastname, idnumber, phone')
       .eq('id', participantId)
-      .single();
+      .maybeSingle();
     
     if (participantError || !participant) {
       console.error("Participant details not found:", participantError);
@@ -68,9 +68,9 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     
     // If no health declaration exists, create a default object for PDF generation
     const defaultDeclaration: HealthDeclarationData = {
-      id: '',
+      id: 'טיוטה',
       participant_id: participantId,
-      submission_date: null,
+      submission_date: new Date().toISOString(),
       notes: null,
       form_status: 'pending',
       signature: null,
@@ -119,7 +119,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       toast({
         variant: "destructive",
         title: "שגיאה ביצירת PDF",
-        description: "נא לנסות שוב מאוחר יותר",
+        description: "אירעה תקלה בעת יצירת המסמך. נא לנסות שוב",
       });
       throw new Error('אירעה שגיאה ביצירת מסמך ה-PDF');
     }

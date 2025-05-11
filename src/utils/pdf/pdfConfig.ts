@@ -21,26 +21,27 @@ export const createRtlPdf = async (): Promise<jsPDF> => {
       try {
         pdf.setLanguage('he');
       } catch (langError) {
-        // Language setting failed, continue without it
+        console.warn('Failed to set Hebrew language', langError);
       }
     }
     
-    // IMPORTANT: Enable RTL mode for the entire document
-    // This is critical for proper text direction
-    pdf.setR2L(true);
-    
-    return pdf;
   } catch (error) {
-    // Fallback with RTL still enabled
-    pdf.setR2L(true);
+    console.warn('Failed to configure Hebrew font:', error);
     
-    // Verify the PDF object is still valid
-    if (!pdf || typeof pdf.text !== 'function') {
-      throw new Error("PDF object is invalid after font configuration error");
+    // Fallback to built-in font with RTL support
+    try {
+      // Try to use any built-in font that might work
+      pdf.setFont('helvetica');
+      console.log('Using fallback font: helvetica');
+    } catch (fontError) {
+      console.error('Font fallback also failed:', fontError);
     }
-    
-    return pdf;
   }
+  
+  // Always enable RTL mode for the document regardless of font setup success
+  pdf.setR2L(true);
+  
+  return pdf;
 };
 
 // Helper function to format document date
@@ -51,20 +52,23 @@ export const getFormattedDate = (): string => {
 // Helper to configure standard document styling
 export const configureDocumentStyle = (pdf: jsPDF): void => {
   try {
-    // Use Alef font as default
+    // Try to use Alef font as default
     pdf.setFont('Alef');
     
     // Standard settings
     pdf.setFontSize(12);
     pdf.setTextColor(0, 0, 0);
-    
-    // CRITICAL: Always use RTL for document styling
-    pdf.setR2L(true);
   } catch (error) {
     // Fallback to default font
-    pdf.setFont('helvetica');
-    pdf.setFontSize(12);
-    pdf.setTextColor(0, 0, 0);
-    pdf.setR2L(true);
+    try {
+      pdf.setFont('helvetica');
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+    } catch (e) {
+      console.warn('Failed to set standard font, using default', e);
+    }
   }
+  
+  // CRITICAL: Always use RTL for document styling
+  pdf.setR2L(true);
 }
