@@ -82,6 +82,11 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         dbProduct.poolid = product.poolId;
       }
       
+      // Remove any fields that don't exist in the database schema
+      delete (dbProduct as any).instructor; // Remove instructor field if it exists
+      
+      console.log("Adding product with data:", dbProduct);
+      
       const { data, error } = await supabase
         .from('products')
         .insert([dbProduct])
@@ -124,6 +129,9 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (poolId !== undefined) {
         dbProduct.poolid = poolId;
       }
+      
+      // Remove any fields that don't exist in the database schema
+      delete (dbProduct as any).instructor; // Remove instructor field if it exists
       
       console.log("Updating product with data:", dbProduct);
       

@@ -47,6 +47,9 @@ export function useProducts() {
     try {
       // Transform product to match our database schema
       const dbProduct = mapProductToDB(product);
+      
+      // Remove any fields that don't exist in the database schema
+      delete (dbProduct as any).instructor; // Remove instructor field if it exists
 
       const { data, error } = await supabase
         .from('products')
@@ -81,6 +84,9 @@ export function useProducts() {
       // Transform product to match our database schema
       const { id, ...productData } = product;
       const dbProduct = mapProductToDB(productData);
+      
+      // Remove any fields that don't exist in the database schema
+      delete (dbProduct as any).instructor; // Remove instructor field if it exists
 
       const { error } = await supabase
         .from('products')
