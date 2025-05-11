@@ -1,3 +1,4 @@
+
 // Import only what's needed to be added or modified
 // For the existing PDF content builder, make sure it accepts the right interface
 
@@ -26,7 +27,7 @@ export function buildHealthDeclarationPDF(
 ) {
   pdf.addFont('David', 'normal');
   pdf.setFont('David');
-  pdf.setRTL(true);
+  pdf.setR2L(true);  // Fixed: setRTL -> setR2L
   pdf.setFontSize(14);
 
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -35,6 +36,7 @@ export function buildHealthDeclarationPDF(
 
   const addLine = (text: string) => {
     const textWidth = pdf.getTextWidth(text);
+    // Fixed: Add the proper arguments for text() function (x, y, text)
     pdf.text(text, pageWidth - margin - textWidth, currentY);
     currentY += 10;
   };
