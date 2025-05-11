@@ -12,6 +12,11 @@ interface FormState {
   signature: string;
 }
 
+// Define a custom event type to include the signature property
+interface CustomFormEvent extends React.FormEvent {
+  signature?: string;
+}
+
 export const useHealthFormState = (healthDeclarationId: string | null) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +78,11 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
       return;
     }
     
-    if (!formState.signature) {
+    // Get signature either from form state or from custom event property
+    const customEvent = e as CustomFormEvent;
+    const signature = customEvent.signature || formState.signature;
+    
+    if (!signature) {
       toast({
         title: "שגיאה",
         description: "יש להוסיף חתימה כדי להמשיך",
@@ -89,7 +98,7 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
         healthDeclarationId,
         formState.agreement,
         formState.notes,
-        formState.signature,
+        signature,
         formState.parentName,
         formState.parentId
       );

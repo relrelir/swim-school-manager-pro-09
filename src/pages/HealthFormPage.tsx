@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ErrorState, LoadingState } from '@/components/health-form/HealthFormStates';
@@ -62,18 +62,18 @@ const HealthFormPage: React.FC = () => {
       // Update form state with signature
       handleSignatureChange(signatureData);
       
-      // Hide signature pad
-      setShowSignaturePad(false);
-      
-      // Create a fake event object for the form submission
-      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-      
       // Submit the form with the signature
-      await handleSubmit(fakeEvent);
+      await handleSubmit({
+        preventDefault: () => {},
+        signature: signatureData // This will now be handled in useHealthFormState
+      } as unknown as React.FormEvent);
       
+      // Hide signature pad and mark as submitted
+      setShowSignaturePad(false);
       setFormSubmitted(true);
     } catch (error) {
       console.error("Error during form submission:", error);
+      alert("אירעה שגיאה בשליחת הטופס. אנא נסה שנית");
     }
   };
 

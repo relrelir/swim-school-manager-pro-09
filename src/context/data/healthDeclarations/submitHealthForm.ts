@@ -25,20 +25,21 @@ export const submitHealthFormService = async (
       form_status: string;
       submission_date: string;
       signature: string | null;
-      parent_name: string | null;
       notes: string | null;
     } = {
       form_status: 'signed',
       submission_date: new Date().toISOString(),
       signature: signature || null,
-      parent_name: parentName || null,
       notes: null
     };
 
-    // Combine parentId info and notes if available
+    // Combine parent information and notes if available
     let combinedNotes = notes || '';
+    if (parentName) {
+      combinedNotes = `Parent Name: ${parentName}${combinedNotes ? '\n\n' + combinedNotes : ''}`;
+    }
     if (parentId) {
-      combinedNotes = `Parent ID: ${parentId}${combinedNotes ? '\n\n' + combinedNotes : ''}`;
+      combinedNotes = `${combinedNotes ? combinedNotes + '\n' : ''}Parent ID: ${parentId}`;
     }
     updates.notes = combinedNotes || null;
     
