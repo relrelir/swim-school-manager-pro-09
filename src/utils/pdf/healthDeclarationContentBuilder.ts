@@ -3,6 +3,7 @@
 import jsPDF from 'jspdf';
 import { configureDocumentStyle } from './pdfConfig';
 import { getFormattedDate } from './pdfConfig';
+import { parseMedicalNotes } from './healthDeclarationParser';
 
 export function buildHealthDeclarationPDF(
   pdf: jsPDF, 
@@ -51,6 +52,30 @@ export function buildHealthDeclarationPDF(
     // Reset font size for content
     pdf.setFontSize(12);
 
+    // Draw simple table with 2 cells - Following the example image exactly
+    const drawSimpleTable = (row1Header: string, row1Value: string, currentY: number): number => {
+      const tableWidth = pageWidth - (2 * margin);
+      
+      // Draw first row
+      pdf.rect(margin, currentY, tableWidth, 10);
+      pdf.setFont('Alef', 'normal');
+      pdf.text(row1Header, pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Row 2 - Split into two cells
+      currentY += 10;
+      // Draw the full row rectangle
+      pdf.rect(margin, currentY, tableWidth, 10);
+      // Add the vertical line to split the row
+      const middleX = pageWidth / 2;
+      pdf.line(middleX, currentY, middleX, currentY + 10);
+      
+      // Add text to second row right cell
+      pdf.text('תעודת זהות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Return the updated Y position
+      return currentY + 10;
+    };
+
     // Create section header
     const addSectionHeader = (text: string) => {
       pdf.setFontSize(14);
@@ -58,69 +83,11 @@ export function buildHealthDeclarationPDF(
       currentY += 8;
       pdf.setFontSize(12);
     };
-
-    // Create table with 2 columns
-    const createTable = (headers: string[], rows: string[][], rowHeight: number = 10) => {
-      const tableWidth = pageWidth - (2 * margin);
-      const colWidth = tableWidth / 2;
-      
-      // Draw table headers
-      pdf.setFillColor(240, 240, 240);
-      pdf.rect(margin, currentY, tableWidth, rowHeight, 'FD');
-      
-      // Add header text
-      pdf.setFont('Alef', 'bold');
-      pdf.text(headers[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
-      pdf.text(headers[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
-      
-      // Reset font
-      pdf.setFont('Alef', 'normal');
-      
-      // Move to next row
-      currentY += rowHeight;
-      
-      // Draw table rows
-      rows.forEach((row) => {
-        // Draw row rectangle
-        pdf.rect(margin, currentY, tableWidth, rowHeight);
-        // Draw column separator
-        pdf.line(margin + colWidth, currentY, margin + colWidth, currentY + rowHeight);
-        
-        // Add row text
-        pdf.text(row[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
-        pdf.text(row[1], margin + colWidth - 5, currentY + 7, { align: 'right' });
-        
-        // Move to next row
-        currentY += rowHeight;
-      });
-      
-      // Add space after table
-      currentY += 10;
-    };
     
-    // Participant Information Table
-    addSectionHeader('פרטי המשתתף');
-    createTable(
-      ['שם מלא', participant.fullName || ''], // Headers
-      [
-        ['תעודת זהות', participant.idnumber || ''],
-        ['טלפון', participant.phone || '']
-      ]
-    );
-
-    // Parent/Guardian Information Table
-    addSectionHeader('פרטי ההורה/אפוטרופוס');
+    // Participant Information Table - a simple two-row table
+    currentY = drawSimpleTable('שם מלא', participant.fullName, currentY);
     
-    // Use parent info from healthDeclaration
-    const parentName = healthDeclaration.parent_name || '';
-    const parentId = healthDeclaration.parent_id || '';
-    
-    createTable(
-      ['שם מלא', parentName], // Headers
-      [['תעודת זהות', parentId]]
-    );
-
-    // Declaration Content
+    // Declaration Content Section
     addSectionHeader('תוכן ההצהרה');
     
     // Create a box for the declaration content
@@ -144,7 +111,7 @@ export function buildHealthDeclarationPDF(
     
     currentY += 8;
 
-    // Medical Notes Section (if any)
+    // Medical Notes Section
     addSectionHeader('הערות רפואיות');
     
     // Create a box for notes
@@ -152,16 +119,7 @@ export function buildHealthDeclarationPDF(
     pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
     
     // Extract only medical notes (removing parent info)
-    let medicalNotes = '';
-    if (healthDeclaration.notes) {
-      // Remove parent info sections from notes
-      medicalNotes = healthDeclaration.notes
-        .replace(/שם הורה:?\s*[^,\n]+/g, '')
-        .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
-        .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
-        .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
-        .trim();
-    }
+    const medicalNotes = parseMedicalNotes(healthDeclaration.notes);
     
     if (medicalNotes && medicalNotes !== '') {
       // If there are actual medical notes
@@ -172,6 +130,23 @@ export function buildHealthDeclarationPDF(
     }
     
     currentY += notesHeight + 10;
+    
+    // Parent Information Table - following the example image
+    addSectionHeader('פרטי ההורה/אפוטרופוס');
+    
+    // Draw parent info box
+    const parentInfoWidth = pageWidth - (2 * margin);
+    pdf.rect(margin, currentY, parentInfoWidth, 20);
+    
+    // Add the parent name with label - exact format from example image
+    const parentName = healthDeclaration.parent_name || '';
+    pdf.text(`Parent Name: ${parentName}`, pageWidth - margin - 5, currentY + 7, { align: 'right' });
+    
+    // Add the parent ID on the next line
+    const parentId = healthDeclaration.parent_id || '';
+    pdf.text(`Parent ID: ${parentId}`, pageWidth - margin - 5, currentY + 17, { align: 'right' });
+    
+    currentY += 30;
     
     // Confirmation Section
     addSectionHeader('אישור');
@@ -187,14 +162,14 @@ export function buildHealthDeclarationPDF(
     // Signature Section
     addSectionHeader('חתימה');
     
-    // Add signature if available
+    // Add signature or line for manual signature
     if (healthDeclaration.signature) {
       try {
         // Calculate signature dimensions - maintain aspect ratio but limit width
         const maxSignatureWidth = 100;
         const signatureHeight = 40;
         
-        // Add the signature image
+        // Add the signature image centered
         pdf.addImage(
           healthDeclaration.signature,
           'PNG',
