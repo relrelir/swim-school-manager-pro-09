@@ -81,9 +81,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       // Extract parent information from notes
       const { parentName, parentId } = parseParentInfo(declarationData.notes);
       
-      console.log("Extracted parent info:", { parentName, parentId });
-      
-      // Build the PDF content with correct layout
+      // Build the PDF content with improved layout
       console.log("Building PDF content");
       const fileName = buildHealthDeclarationPDF(pdf, {
         ...declarationData,
