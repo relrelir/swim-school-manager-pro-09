@@ -1,5 +1,6 @@
 
 import { containsHebrew, isNumberOnly, isDateFormat, isPhoneFormat, isEnglishOrNumber, isHebrewCurrency } from './contentDetection';
+import { formatPdfField, forceLtrDirection as forceLtrDirectionFormat, forceRtlDirection as forceRtlDirectionFormat } from './textFormatting';
 
 /**
  * Process text to ensure correct display direction in PDF
@@ -8,10 +9,10 @@ import { containsHebrew, isNumberOnly, isDateFormat, isPhoneFormat, isEnglishOrN
 export const processTextDirection = (text: string): string => {
   if (!text) return '';
   
-  // For numbers, dates, phone numbers, and English text, display in natural LTR order
+  // For numbers, dates, phone numbers, and English text, we use special handling in RTL context
   if (isNumberOnly(text) || isDateFormat(text) || isPhoneFormat(text) || isEnglishOrNumber(text)) {
-    // Do NOT reverse numeric content - display as is
-    return text;
+    // Use our utility function for numeric/LTR text in RTL context
+    return forceLtrDirectionFormat(text);
   }
 
   // For Hebrew or mixed content, no special handling needed in RTL context
@@ -19,16 +20,15 @@ export const processTextDirection = (text: string): string => {
     return text; // Hebrew works correctly with global RTL
   }
   
-  // Default for other content
-  return text;
+  // Default - assume LTR in RTL context
+  return forceLtrDirectionFormat(text);
 };
 
 /**
  * Force LTR direction for numeric content in RTL context
  */
 export const forceLtrDirection = (text: string): string => {
-  // Do NOT reverse numeric content - display as is
-  return text;
+  return forceLtrDirectionFormat(text);
 };
 
 /**
@@ -54,16 +54,15 @@ export const manuallyReverseString = (text: string): string => {
 export const processTableCellText = (text: string): string => {
   if (!text) return '';
   
-  // Process text without reversing numeric content
-  return text;
+  return formatPdfField(text);
 };
 
 /**
  * Special formatter for Hebrew currency values in tables
  */
 export const processHebrewCurrencyForTable = (text: string): string => {
-  // Do NOT reverse currency values - display as is
-  return text;
+  // Currency needs special handling in RTL context
+  return forceLtrDirectionFormat(text);
 };
 
 /**

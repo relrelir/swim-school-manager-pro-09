@@ -1,6 +1,7 @@
+
 import { processTableCellText, forceLtrDirection } from '../textDirection';
 import { containsHebrew } from '../contentDetection';
-import { formatPdfField } from '../textFormatting';
+import { formatPdfField, reverseString } from '../textFormatting';
 
 /**
  * Process cell text based on content type for optimal table display
@@ -19,9 +20,9 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
   
   // Handle participant ID numbers and other numeric IDs
   if (/^\d{5,9}$/.test(content)) {
-    // ID numbers should display in natural LTR order
+    // ID numbers need LTR formatting in RTL context
     return { 
-      text: content,
+      text: forceLtrDirection(content),
       isRtl: false,
       isCurrency: false 
     };
@@ -29,7 +30,7 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
   // Currency with Hebrew text
   else if (isCurrency && isHebrewContent) {
     return { 
-      text: content,
+      text: formatPdfField(content),
       isRtl: true,
       isCurrency: true 
     };
@@ -37,23 +38,23 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
   // Non-Hebrew currency
   else if (isCurrency) {
     return { 
-      text: content,
+      text: forceLtrDirection(content),
       isRtl: false,
       isCurrency: true 
     };
   }
-  // Date format - always displays in natural LTR order
+  // Date format - always needs LTR in RTL context
   else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(content)) {
     return { 
-      text: content,
+      text: forceLtrDirection(content),
       isRtl: false,
       isCurrency: false 
     };
   }
-  // Pure numbers - display in natural LTR order
+  // Pure numbers - need LTR in RTL context
   else if (/^[0-9\s\-\.\/]+$/.test(content)) {
     return { 
-      text: content,
+      text: forceLtrDirection(content),
       isRtl: false,
       isCurrency: false 
     };
@@ -61,7 +62,8 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
   // Hebrew text - works correctly with global RTL
   else if (isHebrewContent) {
     return { 
-      text: content,
+      // Apply reverseString to Hebrew text for proper display in global RTL
+      text: reverseString(content),
       isRtl: true,
       isCurrency: false 
     };
@@ -69,7 +71,7 @@ export const processCellContent = (cell: any): { text: string, isRtl: boolean, i
   // Other content (English, etc)
   else {
     return { 
-      text: content,
+      text: forceLtrDirection(content),
       isRtl: false,
       isCurrency: false 
     };

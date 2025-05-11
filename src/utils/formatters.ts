@@ -1,4 +1,5 @@
-import { processTextDirection, forceLtrDirection } from './pdf/helpers/textDirection';
+
+import { processTextDirection, forceLtrDirection, processTableCellText, processHebrewCurrencyForTable } from './pdf/helpers/textDirection';
 
 /**
  * Format a number as currency in ILS (New Israeli Shekel)
@@ -10,8 +11,8 @@ export const formatCurrency = (amount: number): string => {
     currency: 'ILS' 
   }).format(amount);
   
-  // Do NOT reverse currency values - display as is
-  return formatted;
+  // Force LTR direction for currency values (they contain numbers)
+  return forceLtrDirection(formatted);
 };
 
 /**
@@ -35,8 +36,8 @@ export const formatCurrencyForTable = (amount: number): string => {
     currency: 'ILS' 
   }).format(amount);
   
-  // Do NOT reverse currency values - display as is
-  return formatted;
+  // Use special table cell processing for currency values
+  return processHebrewCurrencyForTable(formatted);
 };
 
 /**
@@ -56,8 +57,8 @@ export const formatCurrencyForTableUI = (amount: number): string => {
  */
 export const formatDate = (date: Date | string): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  // Do NOT reverse date values - display as is
-  return dateObj.toLocaleDateString('he-IL');
+  // Apply strongest direction handling specifically for dates
+  return forceLtrDirection(dateObj.toLocaleDateString('he-IL'));
 };
 
 /**
@@ -98,11 +99,11 @@ export const formatTime = (time: string): string => {
     date.setHours(hours);
     date.setMinutes(minutes);
     
-    // Format time according to locale (without seconds) without reversing
-    return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    // Format time according to locale (without seconds) with strongest LTR control
+    return forceLtrDirection(date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }));
   } catch (e) {
     console.error('Error formatting time:', e);
-    return time; // Return original if there's an error
+    return forceLtrDirection(time); // Return original with LTR direction if there's an error
   }
 };
 
@@ -162,3 +163,4 @@ export const formatMeetingCount = (current: number, total: number): string => {
 export const formatMeetingCountForUI = (current: number, total: number): string => {
   return `${current}/${total}`;
 };
+
