@@ -21,7 +21,13 @@ export const submitHealthFormService = async (
     }
     
     // Create an updates object with only the fields that exist in the database
-    const updates = {
+    const updates: {
+      form_status: string;
+      submission_date: string;
+      signature: string | null;
+      parent_name: string | null;
+      notes?: string | null;
+    } = {
       form_status: 'signed',
       submission_date: new Date().toISOString(),
       signature: signature || null,

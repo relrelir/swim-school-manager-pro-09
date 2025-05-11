@@ -69,10 +69,7 @@ const HealthFormPage: React.FC = () => {
       const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
       
       // Submit the form with the signature
-      await handleSubmit({
-        ...fakeEvent,
-        signature: signatureData
-      });
+      await handleSubmit(fakeEvent);
       
       setFormSubmitted(true);
     } catch (error) {
