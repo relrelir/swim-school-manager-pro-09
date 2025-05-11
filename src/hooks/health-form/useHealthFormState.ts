@@ -9,7 +9,7 @@ interface FormState {
   notes: string;
   parentName: string;
   parentId: string;
-  signature: string; // Added signature field
+  signature: string;
 }
 
 export const useHealthFormState = (healthDeclarationId: string | null) => {
@@ -20,7 +20,7 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
     notes: '',
     parentName: '',
     parentId: '',
-    signature: '' // Initialize signature as empty string
+    signature: ''
   });
   
   const handleAgreementChange = (value: boolean) => {
@@ -39,7 +39,6 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
     setFormState(prev => ({ ...prev, parentId: e.target.value }));
   };
   
-  // Add signature handling function
   const handleSignatureChange = (signatureData: string) => {
     setFormState(prev => ({ ...prev, signature: signatureData }));
   };
@@ -74,7 +73,6 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
       return;
     }
     
-    // Check if signature is provided
     if (!formState.signature) {
       toast({
         title: "שגיאה",
@@ -87,16 +85,14 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
     setIsLoading(true);
     
     try {
-      // Add parent information to the notes field
-      const notesWithParentInfo = `${formState.parentName}, ת.ז.: ${formState.parentId}\n\n${formState.notes || ''}`;
-      
+      // We'll pass the parentId separately but it will be added to the notes field
       await submitHealthFormService(
         healthDeclarationId,
-  formState.agreement,
-  formState.notes,
-  formState.signature,
-  formState.parentName,
-  formState.parentId
+        formState.agreement,
+        formState.notes,
+        formState.signature,
+        formState.parentName,
+        formState.parentId
       );
       
       toast({
@@ -124,7 +120,7 @@ export const useHealthFormState = (healthDeclarationId: string | null) => {
     handleNotesChange,
     handleParentNameChange,
     handleParentIdChange,
-    handleSignatureChange, // Export the signature handler
+    handleSignatureChange,
     handleSubmit
   };
 };

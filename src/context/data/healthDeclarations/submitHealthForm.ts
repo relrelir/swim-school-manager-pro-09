@@ -20,16 +20,20 @@ export const submitHealthFormService = async (
       throw new Error('Must agree to health declaration');
     }
     
- const updates = {
-  form_status: 'signed',
-  submission_date: new Date().toISOString(),
-  notes: notes || null,
-  signature: signature || null,
-  parent_name: parentName || null,
-  parent_id: parentId || null
-};
+    // Create an updates object without the parent_id field
+    const updates = {
+      form_status: 'signed',
+      submission_date: new Date().toISOString(),
+      notes: notes || null,
+      signature: signature || null,
+      parent_name: parentName || null,
+      // Omitting parent_id as it doesn't exist in the database schema
+    };
 
-
+    // If we want to include parent ID info, add it to notes
+    if (parentId) {
+      updates.notes = `${updates.notes ? updates.notes + '\n\n' : ''}Parent ID: ${parentId}`;
+    }
     
     console.log('Submitting health form for declaration:', declarationId, 'with data:', updates);
     
