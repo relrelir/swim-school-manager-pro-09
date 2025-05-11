@@ -1,5 +1,6 @@
 
 import { jsPDF } from 'jspdf';
+import { forceLtrDirection } from '../helpers/textFormatting';
 
 /**
  * Add participant information section to the PDF document
@@ -44,8 +45,8 @@ export function addParticipantSection(
   
   // Draw table rows for ID and phone
   const rows = [
-    ['תעודת זהות', participantInfo.idnumber || ''],
-    ['טלפון', participantInfo.phone || '']
+    ['תעודת זהות', forceLtrDirection(participantInfo.idnumber || '')],
+    ['טלפון', forceLtrDirection(participantInfo.phone || '')]
   ];
   
   rows.forEach((row) => {
