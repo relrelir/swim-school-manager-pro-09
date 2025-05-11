@@ -34,16 +34,12 @@ export const parseParentInfo = (notes: string | null): { parentName: string; par
 export const parseMedicalNotes = (notes: string | null): string => {
   if (!notes) return '';
   
-  // Clean up the notes - more aggressively remove parent info sections including variable names
+  // Clean up the notes - remove parent info sections
   let cleanedNotes = notes
     .replace(/שם הורה:?\s*[^,\n]+/g, '')
     .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
     .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
     .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
-    .replace(/PARENT NAME:?\s*[^,\n]+/g, '')  // Remove English variable names too
-    .replace(/PARENT ID:?\s*[^,\n]+/g, '')    // Remove English variable names too
-    .replace(/parent_name:?\s*[^,\n]+/g, '')  // Remove code variable names
-    .replace(/parent_id:?\s*[^,\n]+/g, '')    // Remove code variable names
     .trim();
   
   // Remove any empty lines
