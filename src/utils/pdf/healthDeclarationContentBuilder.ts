@@ -110,18 +110,17 @@ export function buildHealthDeclarationPDF(
       ]
     );
 
-    // Parent/Guardian Information Table - IMPORTANT: Place parent info directly in the table
+    // Parent/Guardian Information Table - Display parent info correctly
     addSectionHeader('פרטי ההורה/אפוטרופוס');
     
-    // Get parent info directly from the healthDeclaration object
+    // Get parent info directly from healthDeclaration object - show only values without variable names
     const parentName = healthDeclaration.parent_name || '';
     const parentId = healthDeclaration.parent_id || '';
     
     createTable(
-      ['שם מלא', ''], // Headers
+      ['שם מלא', 'תעודת זהות'], // Headers - changed second header to be more descriptive
       [
-        ['שם מלא', parentName], // Explicitly display parent name in the appropriate field
-        ['תעודת זהות', parentId]  // Explicitly display parent ID in the appropriate field
+        [parentName, parentId]  // Show only the values in a single row
       ]
     );
 
@@ -147,12 +146,12 @@ export function buildHealthDeclarationPDF(
       currentY += 8;
     });
     
-    currentY += 6;
+    currentY += 5; // Reduced spacing
 
     // Medical Notes Section (if any)
     addSectionHeader('הערות רפואיות');
     
-    // Extract medical notes (removing parent info)
+    // Extract medical notes (completely removed parent info)
     let medicalNotes = parseMedicalNotes(healthDeclaration.notes);
     
     // Create a box for notes - make it smaller to save space
@@ -167,7 +166,7 @@ export function buildHealthDeclarationPDF(
       pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
     }
     
-    currentY += notesHeight + 6; // Reduce spacing
+    currentY += notesHeight + 4; // Reduce spacing further
 
     // Confirmation Section - make it more compact
     addSectionHeader('אישור');
@@ -178,7 +177,7 @@ export function buildHealthDeclarationPDF(
     
     pdf.text('אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.', pageWidth - margin - 5, currentY + 10, { align: 'right' });
     
-    currentY += confirmationHeight + 5; // Further reduce spacing between sections
+    currentY += confirmationHeight + 4; // Further reduce spacing
 
     // Signature Section - moved up by reducing spacing between sections
     addSectionHeader('חתימה');
@@ -186,21 +185,21 @@ export function buildHealthDeclarationPDF(
     // Add signature if available - position it higher on the page
     if (healthDeclaration.signature) {
       try {
-        // Calculate signature dimensions - smaller signature to fit better
-        const maxSignatureWidth = 70; // Smaller signature width
-        const signatureHeight = 25; // Smaller height for better fit
+        // Calculate signature dimensions - smaller signature to fit better on one page
+        const maxSignatureWidth = 70; 
+        const signatureHeight = 20; // Even smaller height to fit on one page
         
-        // Add the signature image - center horizontally but higher on the page
+        // Add the signature image - higher on the page
         pdf.addImage(
           healthDeclaration.signature,
           'PNG',
           (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
-          currentY - 2, // Move signature slightly up
+          currentY - 5, // Move signature up even more
           maxSignatureWidth,
           signatureHeight
         );
         
-        currentY += signatureHeight;
+        currentY += signatureHeight - 5; // Reduce space after signature
       } catch (error) {
         console.warn('Failed to add signature image to PDF:', error);
         // Add a line for manual signature if the image fails

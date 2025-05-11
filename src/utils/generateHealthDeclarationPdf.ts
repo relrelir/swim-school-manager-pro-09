@@ -78,7 +78,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       const pdf = await createRtlPdf();
       console.log("PDF object created successfully");
       
-      // Extract parent information from notes - CRITICAL for correct table display
+      // Extract parent information from notes - improved parent info extraction
       const { parentName, parentId } = parseParentInfo(declarationData.notes);
       console.log("Extracted parent info:", { parentName, parentId });
       
@@ -86,8 +86,8 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       console.log("Building PDF content");
       const fileName = buildHealthDeclarationPDF(pdf, {
         ...declarationData,
-        parent_name: parentName,  // Explicitly pass the extracted parent name
-        parent_id: parentId       // Explicitly pass the extracted parent ID
+        parent_name: parentName,  // Pass just the parent name value, not the variable name
+        parent_id: parentId       // Pass just the parent ID value, not the variable name
       }, {
         ...participant,
         fullName,
