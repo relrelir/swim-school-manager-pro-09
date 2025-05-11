@@ -144,40 +144,7 @@ export function buildHealthDeclarationPDF(
     
     currentY += 8;
 
-    // Signature Section - Moved up 2-3 cm (approximately 60-80 points in PDF units)
-    addSectionHeader('חתימה');
-    
-    // Add signature if available - improved positioning
-    if (healthDeclaration.signature) {
-      try {
-        // Calculate signature dimensions - better size
-        const maxSignatureWidth = 100;
-        const signatureHeight = 40;
-        
-        // Move the signature 2-3 cm higher on page
-        pdf.addImage(
-          healthDeclaration.signature,
-          'PNG',
-          (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
-          currentY,  // Position at current Y
-          maxSignatureWidth,
-          signatureHeight
-        );
-        
-        currentY += signatureHeight + 5; // Add space after signature
-      } catch (error) {
-        console.warn('Failed to add signature image to PDF:', error);
-        // Add a line for manual signature if the image fails
-        pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
-        currentY += 20;
-      }
-    } else {
-      // Add a line for manual signature if no digital signature
-      pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
-      currentY += 20;
-    }
-
-    // Medical Notes Section (if any) - Now comes after signature
+    // Medical Notes Section (if any)
     addSectionHeader('הערות רפואיות');
     
     // Create a box for notes
@@ -205,6 +172,39 @@ export function buildHealthDeclarationPDF(
     pdf.text('אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.', pageWidth - margin - 5, currentY + 10, { align: 'right' });
     
     currentY += confirmationHeight + 10;
+
+    // Signature Section
+    addSectionHeader('חתימה');
+    
+    // Add signature if available - improved positioning
+    if (healthDeclaration.signature) {
+      try {
+        // Calculate signature dimensions - better size
+        const maxSignatureWidth = 100;
+        const signatureHeight = 40;
+        
+        // Add the signature image - centered horizontally and higher on page
+        pdf.addImage(
+          healthDeclaration.signature,
+          'PNG',
+          (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
+          currentY,  // Position at current Y
+          maxSignatureWidth,
+          signatureHeight
+        );
+        
+        currentY += signatureHeight + 5; // Add space after signature
+      } catch (error) {
+        console.warn('Failed to add signature image to PDF:', error);
+        // Add a line for manual signature if the image fails
+        pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
+        currentY += 20;
+      }
+    } else {
+      // Add a line for manual signature if no digital signature
+      pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
+      currentY += 20;
+    }
     
     // Return the filename with clean formatting
     const cleanName = participant.fullName.replace(/\s+/g, '_');
