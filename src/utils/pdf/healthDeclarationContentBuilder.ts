@@ -25,7 +25,9 @@ export function buildHealthDeclarationPDF(
     fullName: string;
   }
 ) {
-  pdf.addFont('David', 'normal');
+  // For addFont, we need to provide postScriptName, fontName and fontStyle
+  // The proper format is: addFont(postScriptName, fontName, fontStyle, fontWeight)
+  pdf.addFont('David', 'David', 'normal');
   pdf.setFont('David');
   pdf.setR2L(true);  // Fixed: setRTL -> setR2L
   pdf.setFontSize(14);
