@@ -7,16 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { useAuth } from '@/context/AuthContext';
 import { User, Key, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const { login } = useAuth();
   const { toast } = useToast();
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDebugInfo(null);
     
     if (!username) {
       toast({
@@ -40,6 +44,25 @@ const LoginPage = () => {
     console.log('Login attempt with:', { username, password });
     
     try {
+      // Check directly if credentials exist to debug
+      const { data: directCheck, error: directError } = await supabase
+        .from('admin_credentials')
+        .select('*')
+        .eq('username', username);
+      
+      if (directError) {
+        console.error('Direct query error:', directError);
+        setDebugInfo(`שגיאת שאילתה: ${directError.message}`);
+      } else {
+        console.log('Direct query results:', directCheck);
+        if (directCheck && directCheck.length > 0) {
+          setDebugInfo(`נמצא משתמש "${username}" במערכת. בודק סיסמה...`);
+        } else {
+          setDebugInfo(`משתמש "${username}" לא נמצא במערכת.`);
+        }
+      }
+      
+      // Proceed with normal login
       const success = await login(username, password);
       console.log('Login result:', success);
       
@@ -57,6 +80,10 @@ const LoginPage = () => {
         description: "אירעה שגיאה בהתחברות, אנא נסה שנית",
         variant: "destructive",
       });
+      
+      if (error instanceof Error) {
+        setDebugInfo(`שגיאה: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +127,12 @@ const LoginPage = () => {
                 required
               />
             </div>
+            
+            {debugInfo && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription className="text-sm">{debugInfo}</AlertDescription>
+              </Alert>
+            )}
           </CardContent>
           <CardFooter>
             <Button 
