@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { jsPDF } from 'jspdf';
+import { createRtlPdf } from './pdf/pdfConfig';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
 
@@ -12,6 +12,8 @@ interface HealthDeclarationData {
   notes: string | null;
   form_status: string;
   signature: string | null;
+  parent_name?: string | null;
+  parent_id?: string | null;
 }
 
 export const generateHealthDeclarationPdf = async (participantId: string) => {
@@ -28,7 +30,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('registrations')
       .select('*')
       .eq('participantid', participantId)
-      .maybeSingle();
+      .single();
       
     if (registrationError || !registration) {
       console.error("Registration details not found:", registrationError);
@@ -42,7 +44,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       .from('participants')
       .select('firstname, lastname, idnumber, phone')
       .eq('id', participantId)
-      .maybeSingle();
+      .single();
     
     if (participantError || !participant) {
       console.error("Participant details not found:", participantError);
@@ -71,7 +73,9 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       submission_date: null,
       notes: null,
       form_status: 'pending',
-      signature: null
+      signature: null,
+      parent_name: null,
+      parent_id: null
     };
     
     const declarationData: HealthDeclarationData = healthDeclaration || defaultDeclaration;
@@ -86,13 +90,9 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
     }
     
     try {
-      // Create a simple PDF document without complex font loading
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
+      // Create the PDF document with RTL and font support
+      console.log("Creating PDF with RTL support");
+      const pdf = await createRtlPdf();
       console.log("PDF object created successfully");
       
       // Build the PDF content with improved layout

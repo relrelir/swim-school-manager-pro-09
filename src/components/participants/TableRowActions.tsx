@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Registration } from '@/types';
@@ -77,6 +78,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
     }
   }, [registrationId]);
   
+  // Optimization: Use useCallback to prevent unnecessary rerenders
   const handlePrintHealthDeclaration = useCallback(async () => {
     if (!registration || !registrationId || !participantId) {
       console.error("Cannot generate PDF: Invalid registration", registration);
