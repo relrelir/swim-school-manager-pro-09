@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createRtlPdf } from './pdf/pdfConfig';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
-import { parseParentInfo } from './pdf/healthDeclarationParser';
+import { parseParentInfo, parseMedicalNotes } from './pdf/healthDeclarationParser';
 
 // Define an interface for the health declaration data
 interface HealthDeclarationData {
@@ -80,6 +80,11 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       
       // Extract parent information from notes
       const { parentName, parentId } = parseParentInfo(declarationData.notes);
+      console.log("Extracted parent info:", { parentName, parentId });
+      
+      // Extract actual medical notes (removing parent info)
+      const medicalNotes = parseMedicalNotes(declarationData.notes);
+      console.log("Extracted medical notes length:", medicalNotes?.length || 0);
       
       // Build the PDF content with improved layout
       console.log("Building PDF content");

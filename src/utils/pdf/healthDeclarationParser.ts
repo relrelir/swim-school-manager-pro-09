@@ -13,14 +13,14 @@ export const parseParentInfo = (notes: string | null): { parentName: string; par
   let parentName = '';
   let parentId = '';
   
-  // Try to extract parent name with improved pattern matching
-  const parentNameMatch = cleanedNotes.match(/(?:שם הורה|הורה\/אפוטרופוס):?\s*([^,\n]+)/i);
+  // Try to extract parent name with improved pattern matching - check for various formats
+  const parentNameMatch = cleanedNotes.match(/(?:שם הורה|שם ההורה|הורה\/אפוטרופוס|שם מלא):?\s*([^,\n]+)/i);
   if (parentNameMatch && parentNameMatch[1]) {
     parentName = parentNameMatch[1].trim();
   }
   
-  // Try to extract parent ID with improved pattern matching
-  const parentIdMatch = cleanedNotes.match(/(?:ת\.ז\.\s*הורה|ת\.ז\.|תעודת זהות):?\s*([^,\n]+)/i);
+  // Try to extract parent ID with improved pattern matching - check for various formats
+  const parentIdMatch = cleanedNotes.match(/(?:ת\.ז\.\s*הורה|ת\.ז\.|תעודת זהות|ת\.ז):?\s*([^,\n]+)/i);
   if (parentIdMatch && parentIdMatch[1]) {
     parentId = parentIdMatch[1].trim();
   }
@@ -34,12 +34,15 @@ export const parseParentInfo = (notes: string | null): { parentName: string; par
 export const parseMedicalNotes = (notes: string | null): string => {
   if (!notes) return '';
   
-  // Clean up the notes - remove parent info sections
+  // Clean up the notes - remove parent info sections with more comprehensive patterns
   let cleanedNotes = notes
     .replace(/שם הורה:?\s*[^,\n]+/g, '')
+    .replace(/שם ההורה:?\s*[^,\n]+/g, '')
     .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
+    .replace(/ת\.ז\.:?\s*[^,\n]+/g, '')
     .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
     .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
+    .replace(/שם מלא:?\s*[^,\n]+/g, '')
     .trim();
   
   // Remove any empty lines

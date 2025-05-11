@@ -3,6 +3,7 @@
 import jsPDF from 'jspdf';
 import { configureDocumentStyle } from './pdfConfig';
 import { getFormattedDate } from './pdfConfig';
+import { parseMedicalNotes } from './healthDeclarationParser';
 
 export function buildHealthDeclarationPDF(
   pdf: jsPDF, 
@@ -59,7 +60,59 @@ export function buildHealthDeclarationPDF(
       pdf.setFontSize(12);
     };
 
-    // Create table with 2 columns
+    // Create table with 2 columns - header title on the right
+    const createParentTable = (headers: string[], rows: string[][], rowHeight: number = 10) => {
+      const tableWidth = pageWidth - (2 * margin);
+      const colWidth = tableWidth / 2;
+      
+      // Draw table headers
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margin, currentY, tableWidth, rowHeight, 'FD');
+      
+      // Add header text - right column (header on the right)
+      pdf.setFont('Alef', 'bold');
+      pdf.text(headers[0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Reset font
+      pdf.setFont('Alef', 'normal');
+      
+      // Move to next row
+      currentY += rowHeight;
+      
+      // Draw table row
+      pdf.rect(margin, currentY, tableWidth, rowHeight);
+      
+      // Add row text - content on the left
+      pdf.text(rows[0][0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Move to next row
+      currentY += rowHeight * 1.2;
+      
+      // Draw second header
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margin, currentY, tableWidth, rowHeight, 'FD');
+      
+      // Add header text - right column (header on the right)
+      pdf.setFont('Alef', 'bold');
+      pdf.text(headers[1], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Reset font
+      pdf.setFont('Alef', 'normal');
+      
+      // Move to next row
+      currentY += rowHeight;
+      
+      // Draw table row
+      pdf.rect(margin, currentY, tableWidth, rowHeight);
+      
+      // Add row text - content on the left
+      pdf.text(rows[1][0], pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      
+      // Add space after table
+      currentY += rowHeight + 10;
+    };
+
+    // Create table with 2 columns - standard layout
     const createTable = (headers: string[], rows: string[][], rowHeight: number = 10) => {
       const tableWidth = pageWidth - (2 * margin);
       const colWidth = tableWidth / 2;
@@ -98,7 +151,20 @@ export function buildHealthDeclarationPDF(
       currentY += 10;
     };
     
-    // Participant Information Table
+    // Add section header for parent information - moved to the top
+    addSectionHeader('פרטי ההורה/אפוטרופוס');
+    
+    // Use parent info from healthDeclaration
+    const parentName = healthDeclaration.parent_name || '';
+    const parentId = healthDeclaration.parent_id || '';
+    
+    // Create parent info table - special layout matching the example
+    createParentTable(
+      ['שם מלא', 'תעודת זהות'], // Headers
+      [[parentName], [parentId]] // Each row has only one cell with the value
+    );
+    
+    // Participant Information Table - comes after parent info
     addSectionHeader('פרטי המשתתף');
     createTable(
       ['שם מלא', participant.fullName || ''], // Headers
@@ -106,18 +172,6 @@ export function buildHealthDeclarationPDF(
         ['תעודת זהות', participant.idnumber || ''],
         ['טלפון', participant.phone || '']
       ]
-    );
-
-    // Parent/Guardian Information Table
-    addSectionHeader('פרטי ההורה/אפוטרופוס');
-    
-    // Use parent info from healthDeclaration
-    const parentName = healthDeclaration.parent_name || '';
-    const parentId = healthDeclaration.parent_id || '';
-    
-    createTable(
-      ['שם מלא', parentName], // Headers
-      [['תעודת זהות', parentId]]
     );
 
     // Declaration Content
@@ -147,21 +201,12 @@ export function buildHealthDeclarationPDF(
     // Medical Notes Section (if any)
     addSectionHeader('הערות רפואיות');
     
+    // Extract only medical notes (removing parent info)
+    let medicalNotes = parseMedicalNotes(healthDeclaration.notes);
+    
     // Create a box for notes
     const notesHeight = 20;
     pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
-    
-    // Extract only medical notes (removing parent info)
-    let medicalNotes = '';
-    if (healthDeclaration.notes) {
-      // Remove parent info sections from notes
-      medicalNotes = healthDeclaration.notes
-        .replace(/שם הורה:?\s*[^,\n]+/g, '')
-        .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
-        .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
-        .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
-        .trim();
-    }
     
     if (medicalNotes && medicalNotes !== '') {
       // If there are actual medical notes
@@ -184,15 +229,25 @@ export function buildHealthDeclarationPDF(
     
     currentY += confirmationHeight + 10;
 
+    // Make sure signature is visible at the bottom of the document
+    // Calculate remaining space
+    const remainingSpace = pageHeight - currentY - 30; // Leave 30pt margin at bottom
+    const signatureHeight = 40;
+    
+    // If not enough space for signature, start a new page
+    if (remainingSpace < 60) { // 60pt minimum space needed for signature section
+      pdf.addPage();
+      currentY = 20;
+    }
+    
     // Signature Section
     addSectionHeader('חתימה');
     
-    // Add signature if available
+    // Add signature if available - position at bottom of document
     if (healthDeclaration.signature) {
       try {
         // Calculate signature dimensions - maintain aspect ratio but limit width
-        const maxSignatureWidth = 100;
-        const signatureHeight = 40;
+        const maxSignatureWidth = 120; // Increased size for better visibility
         
         // Add the signature image
         pdf.addImage(
@@ -204,16 +259,26 @@ export function buildHealthDeclarationPDF(
           signatureHeight
         );
         
+        // Add date below signature
         currentY += signatureHeight + 10;
+        pdf.text(`תאריך: ${dateStr}`, pageWidth - margin - 5, currentY, { align: 'right' });
+        
       } catch (error) {
         console.warn('Failed to add signature image to PDF:', error);
         // Add a line for manual signature if the image fails
         pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
+        
+        // Add date text after signature line
+        currentY += 25;
+        pdf.text(`תאריך: ${dateStr}`, pageWidth - margin - 5, currentY, { align: 'right' });
       }
     } else {
       // Add a line for manual signature if no digital signature
       pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
-      currentY += 20;
+      
+      // Add date text after signature line
+      currentY += 25;
+      pdf.text(`תאריך: ${dateStr}`, pageWidth - margin - 5, currentY, { align: 'right' });
     }
     
     // Return the filename with clean formatting
