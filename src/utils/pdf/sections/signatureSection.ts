@@ -22,8 +22,8 @@ export function addSignatureSection(
   if (signature) {
     try {
       // Calculate signature dimensions - better size and position
-      const maxSignatureWidth = 100; // Larger signature width
-      const signatureHeight = 40; // Larger signature height for better visibility
+      const maxSignatureWidth = 80; // Smaller signature width
+      const signatureHeight = 30; // Smaller signature height
       
       // Add the signature image - centered horizontally
       pdf.addImage(

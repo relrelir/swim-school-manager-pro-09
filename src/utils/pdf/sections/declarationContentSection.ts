@@ -17,20 +17,25 @@ export function addDeclarationContentSection(
   currentY += 8;
   pdf.setFontSize(12);
   
-  // Declaration content - made more compact
-  const declarationText = 
-    'אני מצהיר/ה כי בני/בתי/אני בכושר ובמצב בריאותי תקין, כי אעדכן על כל שינוי במצב הבריאותי, וכי אני מאשר/ת טיפול רפואי ראשוני במקרה הצורך.';
+  // Declaration content
+  const declarationText = [
+    '• אני מצהיר/ה בזאת כי בני/בתי/אני נמצא/ת בכושר ובמצב בריאותי תקין/מסוגל להשתתף בפעילות.',
+    '• בהצהרה זו הנני מתחייב/ת, כי אם יחול שינוי במצבו/ה הבריאותי, אעדכן אותך באופן מיידי.',
+    '• אני מתחייב/ת לדווח לך על כל שינוי במצב הבריאותי.',
+    '• אני מאשר/ת לגופכם הרפואי לטפל באופן ראשוני במקרה הצורך.',
+    '• ידוע לי שאחריות בריאותו של בני/בתי חלה עלי בכל ההשתתפות בפעילות.'
+  ];
   
-  // Draw a smaller box for declaration content
-  pdf.rect(margin, currentY, pageWidth - (2 * margin), 25);
+  // Draw a box for declaration content
+  pdf.rect(margin, currentY, pageWidth - (2 * margin), declarationText.length * 10 + 10);
   currentY += 8;
   
-  // Add the compact text with word wrapping
-  const textWidth = pageWidth - (2 * margin) - 10; // 5px padding on each side
-  const wrappedText = pdf.splitTextToSize(declarationText, textWidth);
+  // Add the bullet points
+  declarationText.forEach(text => {
+    pdf.text(text, pageWidth - margin - 5, currentY, { align: 'right' });
+    currentY += 10;
+  });
   
-  pdf.text(wrappedText, pageWidth - margin - 5, currentY, { align: 'right' });
-  
-  // Add space after declaration - reduced spacing
-  return currentY + 20;
+  // Add space after declaration
+  return currentY + 8;
 }

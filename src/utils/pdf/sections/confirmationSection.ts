@@ -17,13 +17,13 @@ export function addConfirmationSection(
   currentY += 8;
   pdf.setFontSize(12);
   
-  // Create a smaller box for confirmation
-  const confirmationHeight = 15; // Reduced height
+  // Create a box for confirmation
+  const confirmationHeight = 20;
   pdf.rect(margin, currentY, pageWidth - (2 * margin), confirmationHeight);
   
   pdf.text('אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.', 
-    pageWidth - margin - 5, currentY + 7, { align: 'right' });
+    pageWidth - margin - 5, currentY + 10, { align: 'right' });
   
-  // Add space after confirmation - reduced spacing
-  return currentY + confirmationHeight + 8;
+  // Add space after confirmation
+  return currentY + confirmationHeight + 10;
 }
