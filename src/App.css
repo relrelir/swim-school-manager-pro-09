@@ -1,4 +1,5 @@
 
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -13,7 +14,7 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em rgba(0, 120, 223, 0.6));
+  filter: drop-shadow(0 0 2em rgba(123, 61, 225, 0.7));
 }
 .logo.react:hover {
   filter: drop-shadow(0 0 2em rgba(97, 218, 251, 0.6));
@@ -36,17 +37,18 @@
 
 .card {
   padding: 2em;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 0.5rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(123, 61, 225, 0.08);
+  transition: all 0.3s ease;
 }
 
 .card:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(123, 61, 225, 0.15);
+  transform: translateY(-3px);
 }
 
 .read-the-docs {
-  color: hsl(210, 25%, 45%);
+  color: hsl(235, 25%, 45%);
 }
+

@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -65,9 +66,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring, var(--ring)))'
 				},
 				status: {
-					paid: 'hsl(130, 60%, 50%)',      // ירוק מעודן לתשלום מלא
-					partial: 'hsl(45, 90%, 65%)',     // צהוב מעודן לתשלום חלקי
-					overdue: 'hsl(0, 70%, 65%)',      // אדום מעודן לחוב
+					paid: 'hsl(145, 70%, 40%)',      // ירוק עשיר לתשלום מלא
+					partial: 'hsl(40, 95%, 60%)',     // צהוב-כתום לתשלום חלקי
+					overdue: 'hsl(0, 85%, 60%)',      // אדום בולט לחוב
 				},
 				warning: {
 					DEFAULT: 'hsl(var(--warning))',
