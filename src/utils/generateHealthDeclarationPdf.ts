@@ -78,7 +78,7 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       const pdf = await createRtlPdf();
       console.log("PDF object created successfully");
       
-      // Extract parent information from notes - with better parsing
+      // Extract parent information from notes using the improved parser
       const { parentName, parentId } = parseParentInfo(declarationData.notes);
       console.log("Extracted parent info:", { parentName, parentId });
       

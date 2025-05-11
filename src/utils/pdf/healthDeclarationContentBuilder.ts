@@ -111,9 +111,9 @@ export function buildHealthDeclarationPDF(
     // Parent/Guardian Information Table
     addSectionHeader('פרטי ההורה/אפוטרופוס');
     
-    // Get parent info from healthDeclaration, make sure to exclude variable names
-    const parentName = healthDeclaration.parent_name ? healthDeclaration.parent_name.replace(/Parent Name:?\s*/i, '') : '';
-    const parentId = healthDeclaration.parent_id ? healthDeclaration.parent_id.replace(/Parent ID:?\s*/i, '') : '';
+    // Get parent info directly from the enhanced declaration data
+    const parentName = healthDeclaration.parent_name || '';
+    const parentId = healthDeclaration.parent_id || '';
     
     createTable(
       ['שם מלא', parentName], // Header row
@@ -151,23 +151,10 @@ export function buildHealthDeclarationPDF(
     const notesHeight = 20;
     pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
     
-    // Display only medical notes (after removing parent info)
-    let medicalNotes = '';
-    if (healthDeclaration.notes) {
-      medicalNotes = healthDeclaration.notes
-        // Remove parent info and variable names
-        .replace(/parent_?name:?\s*[^,\n]+/gi, '')
-        .replace(/parent_?id:?\s*[^,\n]+/gi, '')
-        .replace(/שם הורה:?\s*[^,\n]+/g, '')
-        .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
-        .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
-        .replace(/תעודת זהות:?\s*[^,\n]+/g, '')
-        .trim();
-    }
-    
-    if (medicalNotes && medicalNotes !== '') {
+    // Display only medical notes (parent info has already been removed by parseMedicalNotes)
+    if (healthDeclaration.notes && healthDeclaration.notes !== '') {
       // If there are actual medical notes
-      pdf.text(medicalNotes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
+      pdf.text(healthDeclaration.notes, pageWidth - margin - 5, currentY + 7, { align: 'right' });
     } else {
       // If no notes
       pdf.text('אין הערות רפואיות', pageWidth - margin - 5, currentY + 7, { align: 'right' });
@@ -189,28 +176,29 @@ export function buildHealthDeclarationPDF(
     // Signature Section
     addSectionHeader('חתימה');
     
-    // Add signature if available
+    // Add signature if available - improved positioning
     if (healthDeclaration.signature) {
       try {
-        // Calculate signature dimensions - smaller size to fit page
-        const maxSignatureWidth = 80;  // Reduced width
-        const signatureHeight = 30;    // Reduced height
+        // Calculate signature dimensions - better size
+        const maxSignatureWidth = 100;
+        const signatureHeight = 40;
         
-        // Add the signature image - centered and higher on page
+        // Add the signature image - centered horizontally and higher on page
         pdf.addImage(
           healthDeclaration.signature,
           'PNG',
           (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
-          currentY - 5,  // Position higher on page
+          currentY,  // Position at current Y
           maxSignatureWidth,
           signatureHeight
         );
         
-        currentY += signatureHeight;
+        currentY += signatureHeight + 5; // Add space after signature
       } catch (error) {
         console.warn('Failed to add signature image to PDF:', error);
         // Add a line for manual signature if the image fails
         pdf.line(margin + 20, currentY + 15, pageWidth - margin - 20, currentY + 15);
+        currentY += 20;
       }
     } else {
       // Add a line for manual signature if no digital signature
