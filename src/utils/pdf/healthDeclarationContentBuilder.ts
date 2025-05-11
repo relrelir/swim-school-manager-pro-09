@@ -111,13 +111,13 @@ export function buildHealthDeclarationPDF(
     // Parent/Guardian Information Table
     addSectionHeader('פרטי ההורה/אפוטרופוס');
     
-    // Use parent info from healthDeclaration
-    const parentName = healthDeclaration.parent_name || '';
-    const parentId = healthDeclaration.parent_id || '';
+    // Get parent info from healthDeclaration, make sure to exclude variable names
+    const parentName = healthDeclaration.parent_name ? healthDeclaration.parent_name.replace(/Parent Name:?\s*/i, '') : '';
+    const parentId = healthDeclaration.parent_id ? healthDeclaration.parent_id.replace(/Parent ID:?\s*/i, '') : '';
     
     createTable(
-      ['שם מלא', parentName], // Headers
-      [['תעודת זהות', parentId]]
+      ['שם מלא', parentName], // Header row
+      [['תעודת זהות', parentId]] // Data row
     );
 
     // Declaration Content
@@ -151,11 +151,13 @@ export function buildHealthDeclarationPDF(
     const notesHeight = 20;
     pdf.rect(margin, currentY, pageWidth - (2 * margin), notesHeight);
     
-    // Extract only medical notes (removing parent info)
+    // Display only medical notes (after removing parent info)
     let medicalNotes = '';
     if (healthDeclaration.notes) {
-      // Remove parent info sections from notes
       medicalNotes = healthDeclaration.notes
+        // Remove parent info and variable names
+        .replace(/parent_?name:?\s*[^,\n]+/gi, '')
+        .replace(/parent_?id:?\s*[^,\n]+/gi, '')
         .replace(/שם הורה:?\s*[^,\n]+/g, '')
         .replace(/ת\.ז\.\s*הורה:?\s*[^,\n]+/g, '')
         .replace(/הורה\/אפוטרופוס:?\s*[^,\n]+/g, '')
@@ -190,21 +192,21 @@ export function buildHealthDeclarationPDF(
     // Add signature if available
     if (healthDeclaration.signature) {
       try {
-        // Calculate signature dimensions - maintain aspect ratio but limit width
-        const maxSignatureWidth = 100;
-        const signatureHeight = 40;
+        // Calculate signature dimensions - smaller size to fit page
+        const maxSignatureWidth = 80;  // Reduced width
+        const signatureHeight = 30;    // Reduced height
         
-        // Add the signature image
+        // Add the signature image - centered and higher on page
         pdf.addImage(
           healthDeclaration.signature,
           'PNG',
           (pageWidth / 2) - (maxSignatureWidth / 2), // Center horizontally
-          currentY,
+          currentY - 5,  // Position higher on page
           maxSignatureWidth,
           signatureHeight
         );
         
-        currentY += signatureHeight + 10;
+        currentY += signatureHeight;
       } catch (error) {
         console.warn('Failed to add signature image to PDF:', error);
         // Add a line for manual signature if the image fails

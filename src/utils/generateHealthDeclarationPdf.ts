@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createRtlPdf } from './pdf/pdfConfig';
 import { buildHealthDeclarationPDF } from './pdf/healthDeclarationContentBuilder';
 import { toast } from "@/components/ui/use-toast";
-import { parseParentInfo } from './pdf/healthDeclarationParser';
+import { parseParentInfo, parseMedicalNotes } from './pdf/healthDeclarationParser';
 
 // Define an interface for the health declaration data
 interface HealthDeclarationData {
@@ -78,16 +78,24 @@ export const generateHealthDeclarationPdf = async (participantId: string) => {
       const pdf = await createRtlPdf();
       console.log("PDF object created successfully");
       
-      // Extract parent information from notes
+      // Extract parent information from notes - with better parsing
       const { parentName, parentId } = parseParentInfo(declarationData.notes);
+      console.log("Extracted parent info:", { parentName, parentId });
+      
+      // Extract only medical notes (without parent info)
+      const medicalNotes = parseMedicalNotes(declarationData.notes);
+      
+      // Create a new declaration object with separated data
+      const enhancedDeclaration = {
+        ...declarationData,
+        notes: medicalNotes, // Only medical notes
+        parent_name: parentName, // Separated parent name
+        parent_id: parentId // Separated parent ID
+      };
       
       // Build the PDF content with improved layout
-      console.log("Building PDF content");
-      const fileName = buildHealthDeclarationPDF(pdf, {
-        ...declarationData,
-        parent_name: parentName,
-        parent_id: parentId
-      }, {
+      console.log("Building PDF content with properly separated data");
+      const fileName = buildHealthDeclarationPDF(pdf, enhancedDeclaration, {
         ...participant,
         fullName,
       });
