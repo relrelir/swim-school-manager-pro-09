@@ -55,11 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Attempting login with:', { username, password });
       
+      // Using maybeSingle here to handle the case properly with RLS enabled
       const { data, error } = await supabase
         .from('admin_credentials')
         .select()
         .eq('username', username)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Login error:', error);
