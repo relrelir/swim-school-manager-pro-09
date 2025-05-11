@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,20 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { useAuth } from '@/context/AuthContext';
 import { User, Key, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const { login } = useAuth();
   const { toast } = useToast();
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setDebugInfo(null);
     
     if (!username) {
       toast({
@@ -43,32 +40,15 @@ const LoginPage = () => {
     console.log('Login attempt with:', { username, password });
     
     try {
-      // Check if the user exists first
-      const { data: userCheck } = await supabase
-        .from('admin_credentials')
-        .select('username')
-        .eq('username', username);
+      const success = await login(username, password);
+      console.log('Login result:', success);
       
-      if (!userCheck || userCheck.length === 0) {
-        setDebugInfo(`משתמש "${username}" לא נמצא במערכת.`);
+      if (!success) {
         toast({
           title: "שגיאת התחברות",
-          description: "שם משתמש לא קיים",
+          description: "שם משתמש או סיסמה שגויים",
           variant: "destructive",
         });
-        setIsLoading(false);
-        return;
-      }
-      
-      setDebugInfo(`נמצא משתמש "${username}" במערכת. בודק ��יסמה...`);
-      
-      // Attempt to login
-      const success = await login(username, password);
-      
-      if (success) {
-        setDebugInfo("התחברות מוצלחת! מעביר אותך למערכת...");
-      } else {
-        setDebugInfo("סיסמה שגויה.");
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -77,10 +57,6 @@ const LoginPage = () => {
         description: "אירעה שגיאה בהתחברות, אנא נסה שנית",
         variant: "destructive",
       });
-      
-      if (error instanceof Error) {
-        setDebugInfo(`שגיאה: ${error.message}`);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -124,12 +100,6 @@ const LoginPage = () => {
                 required
               />
             </div>
-            
-            {debugInfo && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertDescription className="text-sm">{debugInfo}</AlertDescription>
-              </Alert>
-            )}
           </CardContent>
           <CardFooter>
             <Button 
