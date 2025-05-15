@@ -5,21 +5,73 @@ import { useAuth } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Key } from 'lucide-react';
+import { LogOut, Key, Loader2 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
   const { logout, changePassword, user, isAdmin } = useAuth();
+  const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
+  const validatePasswords = () => {
     if (newPassword.length < 4) {
+      setPasswordError("הסיסמה חייבת להכיל לפחות 4 תווים");
+      return false;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordError("הסיסמאות אינן תואמות");
+      return false;
+    }
+    
+    setPasswordError("");
+    return true;
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePasswords()) {
       return;
     }
-    changePassword(newPassword);
-    setIsPasswordDialogOpen(false);
-    setNewPassword("");
+    
+    setIsLoading(true);
+    
+    try {
+      const success = await changePassword(newPassword);
+      
+      if (success) {
+        setIsPasswordDialogOpen(false);
+        setNewPassword("");
+        setConfirmPassword("");
+        toast({
+          title: "סיסמה עודכנה",
+          description: "הסיסמה החדשה נשמרה בהצלחה",
+        });
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בעדכון הסיסמה",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDialogClose = () => {
+    if (!isLoading) {
+      setIsPasswordDialogOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError("");
+    }
   };
 
   return (
@@ -51,7 +103,7 @@ const Header = () => {
         </div>
       </div>
 
-      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+      <Dialog open={isPasswordDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-md animate-enter">
           <DialogHeader>
             <DialogTitle className="font-alef">שינוי סיסמה</DialogTitle>
@@ -72,13 +124,45 @@ const Header = () => {
                   placeholder="הזן סיסמה חדשה"
                   minLength={4}
                   required
+                  disabled={isLoading}
                 />
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">אימות סיסמה</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="rtl"
+                  placeholder="הזן את הסיסמה שנית"
+                  minLength={4}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              
+              {passwordError && (
+                <div className="text-destructive text-sm">{passwordError}</div>
+              )}
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit" disabled={newPassword.length < 4}>
-                <Key className="h-4 w-4 ml-2" />
-                שמור סיסמה חדשה
+              <Button 
+                type="submit" 
+                disabled={isLoading || newPassword.length < 4}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    מעדכן סיסמה...
+                  </>
+                ) : (
+                  <>
+                    <Key className="h-4 w-4 ml-2" />
+                    שמור סיסמה חדשה
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

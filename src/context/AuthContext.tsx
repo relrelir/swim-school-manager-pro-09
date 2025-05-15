@@ -8,6 +8,7 @@ interface User {
   id: string;
   displayName: string;
   role: 'admin' | 'viewer'; // Added role field
+  username?: string; // Add username field to track the logged in user
 }
 
 interface AuthContextType {
@@ -39,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const savedAuth = localStorage.getItem('swimSchoolAuth');
     const savedRole = localStorage.getItem('swimSchoolUserRole');
+    const savedUsername = localStorage.getItem('swimSchoolUsername');
     
     if (savedAuth === 'true') {
       setIsAuthenticated(true);
@@ -46,7 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser({
         id: '1',
         displayName: savedRole === 'viewer' ? 'צופה' : 'מנהל',
-        role: (savedRole === 'viewer' ? 'viewer' : 'admin') as 'admin' | 'viewer'
+        role: (savedRole === 'viewer' ? 'viewer' : 'admin') as 'admin' | 'viewer',
+        username: savedUsername || undefined
       });
     }
   }, []);
@@ -76,15 +79,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && data.password === password) {
         setIsAuthenticated(true);
         
-        // Save auth state with role
+        // Save auth state with role and username
         localStorage.setItem('swimSchoolAuth', 'true');
         localStorage.setItem('swimSchoolUserRole', data.role || 'admin');
+        localStorage.setItem('swimSchoolUsername', username);
         
         // Set user data when logging in
         setUser({
           id: data.id,
           displayName: data.role === 'viewer' ? 'צופה' : 'מנהל',
-          role: (data.role || 'admin') as 'admin' | 'viewer'
+          role: (data.role || 'admin') as 'admin' | 'viewer',
+          username: username
         });
         
         return true;
@@ -113,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('swimSchoolAuth');
     localStorage.removeItem('swimSchoolUserRole');
+    localStorage.removeItem('swimSchoolUsername');
   };
 
   // Helper function to check if user is admin
@@ -131,6 +137,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
+    // Check if we have the username stored
+    const username = user?.username || localStorage.getItem('swimSchoolUsername');
+    
+    if (!username) {
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לזהות את המשתמש הנוכחי",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     try {
       const { error } = await supabase
         .from('admin_credentials')
@@ -138,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           password: newPassword,
           updated_at: new Date().toISOString()
         })
-        .eq('username', 'ענבר במדבר 2014');
+        .eq('username', username);
       
       if (error) {
         console.error('Error updating password:', error);
