@@ -22,33 +22,63 @@ const AddSeasonDialog: React.FC<AddSeasonDialogProps> = ({ isOpen, onOpenChange 
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().substring(0, 10)
   });
 
+  const [formError, setFormError] = useState("");
+
+  const validateForm = () => {
+    if (!newSeason.name.trim()) {
+      setFormError("יש להזין שם לעונה");
+      return false;
+    }
+    if (!newSeason.startDate) {
+      setFormError("יש להזין תאריך התחלה");
+      return false;
+    }
+    if (!newSeason.endDate) {
+      setFormError("יש להזין תאריך סיום");
+      return false;
+    }
+    
+    setFormError("");
+    return true;
+  };
+
   const handleAddSeason = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newSeason.name || !newSeason.startDate || !newSeason.endDate) {
+    if (!validateForm()) {
       toast({
         title: "שגיאה",
-        description: "יש למלא את כל השדות",
+        description: formError || "יש למלא את כל השדות",
         variant: "destructive"
       });
       return;
     }
     
+    console.log("Submitting season data:", newSeason); // Debug log
+    
     try {
-      await addSeason(newSeason);
-      onOpenChange(false);
-      toast({
-        title: "עונה נוספה בהצלחה",
-        description: `העונה "${newSeason.name}" נוספה בהצלחה`
-      });
+      const result = await addSeason(newSeason);
       
-      // Reset form
-      setNewSeason({
-        name: "",
-        startDate: today,
-        endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().substring(0, 10)
-      });
-      
+      if (result) {
+        onOpenChange(false);
+        toast({
+          title: "עונה נוספה בהצלחה",
+          description: `העונה "${newSeason.name}" נוספה בהצלחה`
+        });
+        
+        // Reset form
+        setNewSeason({
+          name: "",
+          startDate: today,
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().substring(0, 10)
+        });
+      } else {
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן להוסיף את העונה",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Failed to add season:', error);
       toast({
@@ -96,6 +126,10 @@ const AddSeasonDialog: React.FC<AddSeasonDialogProps> = ({ isOpen, onOpenChange 
                 onChange={(e) => setNewSeason({ ...newSeason, endDate: e.target.value })}
               />
             </div>
+            
+            {formError && (
+              <div className="text-destructive text-sm">{formError}</div>
+            )}
           </div>
           
           <DialogFooter className="mt-6">

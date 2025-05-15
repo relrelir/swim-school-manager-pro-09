@@ -59,18 +59,21 @@ export const SeasonsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Add a new season
   const addSeason = async (season: Omit<Season, 'id'>): Promise<Season | undefined> => {
     try {
+      console.log('Adding season:', season); // Debug log
+
       // Map our model to database fields (snake_case)
       const { data, error } = await supabase
         .from('seasons')
         .insert({
           name: season.name,
-          startdate: season.startDate,
-          enddate: season.endDate
+          startdate: season.startDate, // Note the correct field name for DB
+          enddate: season.endDate      // Note the correct field name for DB
         })
         .select()
         .single();
 
       if (error) {
+        console.error('Supabase error:', error); // Debug log
         throw error;
       }
 
@@ -78,9 +81,11 @@ export const SeasonsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const newSeason: Season = {
         id: data.id,
         name: data.name,
-        startDate: data.startdate,
-        endDate: data.enddate
+        startDate: data.startdate, // Map from DB field name to model field name
+        endDate: data.enddate      // Map from DB field name to model field name
       };
+
+      console.log('New season created:', newSeason); // Debug log
 
       // Update state
       setSeasons(prevSeasons => [...prevSeasons, newSeason]);
@@ -109,8 +114,8 @@ export const SeasonsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .from('seasons')
         .update({
           name: season.name,
-          startdate: season.startDate,
-          enddate: season.endDate
+          startdate: season.startDate, // Correct field name for DB
+          enddate: season.endDate      // Correct field name for DB
         })
         .eq('id', season.id);
 
