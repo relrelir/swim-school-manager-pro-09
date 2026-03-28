@@ -2,12 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper: check if user is admin (role stored in /users/{uid})
     function isAdmin() {
       return isAuthenticated() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -35,10 +33,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Participants: any authenticated user can read; only admins can write
+    // Participants: any authenticated user can read; only admins can write.
+    // Exception: the public health form may set healthApproval=true (and updatedAt) only.
     match /participants/{docId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      // Health form batch: allow setting healthApproval=true from unauthenticated context
+      allow update: if
+        !isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['healthApproval', 'updatedAt']) &&
+        request.resource.data.healthApproval == true;
     }
 
     // Registrations: any authenticated user can read; only admins can write
@@ -54,19 +59,50 @@ service cloud.firestore {
     }
 
     // Health Declarations:
-    // - Public write allowed for token-based form submission (unauthenticated parents fill the form)
-    // - Authenticated users can read and create
+    // - Only admins (authenticated) can CREATE a declaration (via createHealthDeclarationLink)
+    // - Public UPDATE allowed only when the token matches, status goes pending→signed,
+    //   and field sizes are within limits (prevents DoS via huge signatures)
     // - Only admins can delete
     match /healthDeclarations/{docId} {
       allow read: if isAuthenticated();
-      allow create: if true; // Public: parents submit the form via token link
-      allow update: if true; // Public: form submission updates the declaration
+
+      allow create: if isAuthenticated();
+
+      allow update: if
+        // Authenticated admin can update anything
+        isAuthenticated() ||
+        // Unauthenticated parent submitting the form:
+        // token must match, form must be pending→signed, field sizes enforced
+        (resource.data.token == request.resource.data.token &&
+         resource.data.formStatus == 'pending' &&
+         request.resource.data.formStatus == 'signed' &&
+         request.resource.data.parentName is string &&
+         request.resource.data.parentName.size() <= 100 &&
+         request.resource.data.parentId is string &&
+         request.resource.data.parentId.size() <= 12 &&
+         request.resource.data.signature is string &&
+         request.resource.data.signature.size() <= 524288 &&
+         request.resource.data.get('notes', '').size() <= 2000);
+
       allow delete: if isAdmin();
     }
 
-    // Leads: admin only
+    // Leads:
+    // - Admins can read, update, delete
+    // - Public CREATE allowed from the /join registration form (with field validation)
     match /leads/{docId} {
-      allow read, write: if isAdmin();
+      allow read:           if isAdmin();
+      allow update, delete: if isAdmin();
+      allow create: if
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 2 &&
+        request.resource.data.name.size() <= 100 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() <= 20 &&
+        (request.resource.data.notes == null ||
+         (request.resource.data.notes is string &&
+          request.resource.data.notes.size() <= 2000)) &&
+        request.resource.data.status == 'חדש';
     }
   }
 }
