@@ -18,17 +18,8 @@ export function didParseCell(data: CellHookData): void {
   cell.text = Array.isArray(processed.text) ? processed.text : [processed.text];
   
   // Apply appropriate alignment based on content type
-  if (/^\d{5,9}$/.test(cellContent) || /^0\d{1,2}[\-\s]?\d{7,8}$/.test(cellContent) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(cellContent)) {
-    // ID numbers, phone numbers, dates - align left in RTL context
-    cell.styles.halign = 'left';
-  }
-  else if (processed.isCurrency || !processed.isRtl) {
-    // Force left alignment for numbers, currency, and non-RTL text
-    cell.styles.halign = 'left';
-  } else {
-    // Right alignment for Hebrew text in RTL context
-    cell.styles.halign = 'right';
-  }
+  // All cells right-aligned — this is an RTL document
+  cell.styles.halign = 'right';
   
   // Log cell processing for debugging
   console.log(`Cell "${cellContent}" processed with halign=${cell.styles.halign}`);

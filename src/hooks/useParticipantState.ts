@@ -27,7 +27,8 @@ export const useParticipantState = (product?: Product) => {
     requiredAmount: product?.price || 0,
     paidAmount: 0,
     receiptNumber: '',
-    discountApproved: false
+    discountApproved: false,
+    discountAmount: null as number | null
   });
   const [newPayment, setNewPayment] = useState({
     amount: 0,
@@ -56,7 +57,8 @@ export const useParticipantState = (product?: Product) => {
       requiredAmount: product?.price || 0,
       paidAmount: 0,
       receiptNumber: '',
-      discountApproved: false
+      discountApproved: false,
+    discountAmount: null as number | null
     });
   };
 

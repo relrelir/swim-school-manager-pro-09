@@ -68,6 +68,8 @@ export const useParticipants = () => {
     handleDeleteRegistration: actions.handleDeleteRegistration,
     handleUpdateHealthApproval: actions.handleUpdateHealthApproval,
     handleOpenHealthForm: actions.handleOpenHealthForm,
+    pendingHealthSend: actions.pendingHealthSend,
+    clearPendingHealthSend: actions.clearPendingHealthSend,
     
     // Utility functions
     resetForm: core.resetForm,

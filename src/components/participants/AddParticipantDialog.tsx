@@ -16,12 +16,14 @@ interface AddParticipantDialogProps {
     paidAmount: number;
     receiptNumber: string;
     discountApproved: boolean;
+    discountAmount?: number | null;
   };
   setRegistrationData: React.Dispatch<React.SetStateAction<{
     requiredAmount: number;
     paidAmount: number;
     receiptNumber: string;
     discountApproved: boolean;
+    discountAmount?: number | null;
   }>>;
   onSubmit: (e: React.FormEvent) => void;
 }
@@ -83,26 +85,57 @@ const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="required-amount">סכום לתשלום</Label>
+                  <Label htmlFor="required-amount">מחיר מלא (₪)</Label>
                   <Input id="required-amount" type="number" value={registrationData.requiredAmount} className="bg-gray-100 ltr" readOnly />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="discount-amount">הנחה (₪)</Label>
+                  <Input
+                    id="discount-amount"
+                    type="number"
+                    value={registrationData.discountAmount ?? ''}
+                    onChange={e => {
+                      const discount = e.target.value ? Number(e.target.value) : null;
+                      setRegistrationData({
+                        ...registrationData,
+                        discountAmount: discount,
+                        discountApproved: discount != null && discount > 0,
+                      });
+                    }}
+                    min={0}
+                    max={registrationData.requiredAmount}
+                    className="ltr"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="effective-amount">סכום לתשלום (אחרי הנחה)</Label>
+                  <Input
+                    id="effective-amount"
+                    type="number"
+                    value={registrationData.requiredAmount - (registrationData.discountAmount || 0)}
+                    className="bg-gray-100 ltr"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="paid-amount">סכום ששולם</Label>
                   <Input id="paid-amount" type="number" value={registrationData.paidAmount} onChange={e => setRegistrationData({
-                  ...registrationData,
-                  paidAmount: Number(e.target.value),
-                  discountApproved: registrationData.discountApproved
-                })} required min={0} max={registrationData.requiredAmount} className="ltr" />
+                    ...registrationData,
+                    paidAmount: Number(e.target.value),
+                  })} required min={0} className="ltr" />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="receipt-number">מספר קבלה</Label>
                 <Input id="receipt-number" value={registrationData.receiptNumber} onChange={e => setRegistrationData({
-                ...registrationData,
-                receiptNumber: e.target.value,
-                discountApproved: registrationData.discountApproved
-              })} required />
+                  ...registrationData,
+                  receiptNumber: e.target.value,
+                })} required />
               </div>
             </div>
           </div>

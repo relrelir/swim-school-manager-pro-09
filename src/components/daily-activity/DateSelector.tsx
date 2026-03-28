@@ -38,6 +38,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onDateChange 
                 onDateChange(date);
               }
             }}
+            locale={he}
             weekStartsOn={0}
             captionLayout="dropdown"
             fromYear={2020}

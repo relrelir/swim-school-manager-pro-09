@@ -20,7 +20,7 @@ const ProductsTableActions: React.FC<ProductsTableActionsProps> = ({
   
   return (
     <div className="flex space-x-2">
-      <Button variant="outline" size="sm" onClick={() => navigate(`/product/${product.id}/participants`)}>
+      <Button variant="default" size="sm" onClick={() => navigate(`/product/${product.id}/participants`)}>
         <Users className="h-4 w-4 ml-1" />
         צפה במשתתפים
       </Button>

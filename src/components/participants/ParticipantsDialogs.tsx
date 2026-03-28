@@ -19,12 +19,14 @@ interface ParticipantsDialogsProps {
     paidAmount: number;
     receiptNumber: string;
     discountApproved: boolean;
+    discountAmount?: number | null;
   };
   setRegistrationData: React.Dispatch<React.SetStateAction<{
     requiredAmount: number;
     paidAmount: number;
     receiptNumber: string;
     discountApproved: boolean;
+    discountAmount?: number | null;
   }>>;
   currentRegistration: Registration | null;
   participants: Participant[];
@@ -41,13 +43,13 @@ interface ParticipantsDialogsProps {
     registrationId?: string; // Add registrationId field
   }>>;
   currentHealthDeclaration: {
-    registrationId: string;
+    participantId: string;
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
   } | null;
   setCurrentHealthDeclaration: React.Dispatch<React.SetStateAction<{
-    registrationId: string;
+    participantId: string;
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
@@ -108,7 +110,7 @@ const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
         <HealthDeclarationForm
           isOpen={isHealthFormOpen}
           onOpenChange={setIsHealthFormOpen}
-          registrationId={currentHealthDeclaration.registrationId}
+          participantId={currentHealthDeclaration.participantId}
           participantName={currentHealthDeclaration.participantName}
           defaultPhone={currentHealthDeclaration.phone}
           healthDeclaration={currentHealthDeclaration.declaration}

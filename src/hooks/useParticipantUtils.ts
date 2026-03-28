@@ -31,6 +31,8 @@ export const useParticipantUtils = (
         return 'text-yellow-800 bg-yellow-100 bg-opacity-50 px-2 py-1 rounded';
       case 'הנחה':
         return 'text-blue-800 bg-blue-100 bg-opacity-50 px-2 py-1 rounded';
+      case 'לא שולם':
+        return 'text-red-800 bg-red-100 bg-opacity-50 px-2 py-1 rounded';
       default:
         return '';
     }

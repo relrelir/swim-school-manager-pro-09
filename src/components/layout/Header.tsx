@@ -79,7 +79,7 @@ const Header = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-reverse space-x-3">
           <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M2 15c6.667-6 13.333 0 20-6M9 22c0-4.418-1.791-8-4-8s-4 3.582-4 8M15 22c0-4.418 1.791-8 4-8s4 3.582 4 8"></path>
             </svg>
           </div>
@@ -91,13 +91,13 @@ const Header = () => {
         
         <div className="flex gap-2">
           {isAdmin() && (
-            <Button variant="outline" size="sm" onClick={() => setIsPasswordDialogOpen(true)} className="bg-white/10 text-white border-white/20 hover:bg-white/20">
-              <Key className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={() => setIsPasswordDialogOpen(true)} aria-label="החלפת סיסמה" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+              <Key aria-hidden="true" className="h-4 w-4" />
               <span className="hidden sm:inline">החלפת סיסמה</span>
             </Button>
           )}
-          <Button variant="destructive" size="sm" onClick={logout} className="bg-white/10 text-white border-white/20 hover:bg-white/20">
-            <LogOut className="h-4 w-4" />
+          <Button variant="destructive" size="sm" onClick={logout} aria-label="התנתקות מהמערכת" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+            <LogOut aria-hidden="true" className="h-4 w-4" />
             <span className="hidden sm:inline">התנתקות</span>
           </Button>
         </div>

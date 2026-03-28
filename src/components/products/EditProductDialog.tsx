@@ -102,21 +102,23 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95%] w-full sm:max-w-lg p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>עריכת מוצר</DialogTitle>
-          <DialogDescription>
-            שינוי במפגשים או בימי הפעילות ישנה את תאריך הסיום המחושב.
-          </DialogDescription>
-        </DialogHeader>
-        {editingProduct && (
-          <EditProductForm
-            editingProduct={editingProduct}
-            setEditingProduct={setEditingProduct}
-            onSubmit={handleSubmit}
-            calculatedEndDate={calculatedEndDate}
-          />
-        )}
+      <DialogContent className="max-w-[95%] w-full sm:max-w-lg p-0 max-h-[85vh] overflow-hidden" dir="ltr">
+        <div dir="rtl" className="overflow-y-auto max-h-[85vh] p-4 sm:p-6">
+          <DialogHeader className="mb-4">
+            <DialogTitle>עריכת מוצר</DialogTitle>
+            <DialogDescription>
+              שינוי במפגשים או בימי הפעילות ישנה את תאריך הסיום המחושב.
+            </DialogDescription>
+          </DialogHeader>
+          {editingProduct && (
+            <EditProductForm
+              editingProduct={editingProduct}
+              setEditingProduct={setEditingProduct}
+              onSubmit={handleSubmit}
+              calculatedEndDate={calculatedEndDate}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

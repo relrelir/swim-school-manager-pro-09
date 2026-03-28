@@ -19,6 +19,7 @@ export const useParticipantForm = (product?: Product) => {
     paidAmount: 0,
     receiptNumber: '',
     discountApproved: false,
+    discountAmount: null as number | null,
   });
   
   const [newPayment, setNewPayment] = useState({
@@ -52,6 +53,7 @@ export const useParticipantForm = (product?: Product) => {
       paidAmount: 0,
       receiptNumber: '',
       discountApproved: false,
+    discountAmount: null as number | null,
     });
   };
 

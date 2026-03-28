@@ -84,10 +84,10 @@ export function useProductPageData(seasonId: string | undefined, poolId?: string
     }
   }, [seasonProducts, getRegistrationsByProduct, getPaymentsByRegistration]);
 
-  // Format date for display
+  // Format date for display — Israeli format DD/MM/YYYY
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString();
+      return new Date(dateString).toLocaleDateString('he-IL');
     } catch (e) {
       return dateString;
     }

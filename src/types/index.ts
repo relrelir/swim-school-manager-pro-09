@@ -2,8 +2,8 @@
 export interface User {
   id: string;
   email: string;
-  name?: string;
-  role: 'admin' | 'user';
+  displayName: string;
+  role: 'admin' | 'viewer';
 }
 
 export interface Product {
@@ -11,20 +11,19 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
-  imageUrl?: string;
-  active: boolean;
+  active?: boolean;
   startDate: string;
   endDate: string;
   maxParticipants: number;
   notes?: string;
   seasonId: string;
-  poolId?: string; // New field to reference a pool
+  poolId?: string | null;
   type: ProductType;
   meetingsCount?: number;
   startTime?: string;
   daysOfWeek?: string[];
-  discountAmount?: number;
-  effectivePrice?: number;
+  discountAmount?: number | null;
+  effectivePrice?: number | null;
 }
 
 export type ProductType = 'קורס' | 'חוג' | 'קייטנה';
@@ -39,21 +38,10 @@ export interface Season {
 export interface Pool {
   id: string;
   name: string;
-  seasonId: string; // Now this is required
-  createdAt: string;
-  updatedAt: string;
+  seasonId: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
-
-// Commented code below:
-/*
-export interface Pool {
-  id: string;
-  name: string;
-  seasonId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-*/
 
 export interface Participant {
   id: string;
@@ -72,8 +60,8 @@ export interface Registration {
   requiredAmount: number;
   paidAmount: number;
   discountApproved: boolean;
-  discountAmount?: number;
-  receiptNumber: string;
+  discountAmount?: number | null;
+  receiptNumber?: string | null;
 }
 
 export interface Payment {
@@ -84,7 +72,8 @@ export interface Payment {
   receiptNumber: string;
 }
 
-export type PaymentStatus = 'paid' | 'partial' | 'unpaid' | 'discounted' | 'מלא' | 'חלקי' | 'יתר' | 'הנחה' | 'מלא / הנחה' | 'חלקי / הנחה';
+// Hebrew-only payment statuses (consistent)
+export type PaymentStatus = 'מלא' | 'חלקי' | 'יתר' | 'הנחה' | 'מלא / הנחה' | 'חלקי / הנחה' | 'לא שולם';
 
 export interface PaymentStatusDetails {
   paid: number;
@@ -92,24 +81,21 @@ export interface PaymentStatusDetails {
   status: PaymentStatus;
 }
 
+// Consistent camelCase – no duplicate snake_case fields
 export interface HealthDeclaration {
   id: string;
-  participant_id: string; // This is the field name in the database (stores registration ID)
+  participantId: string;
   token: string;
-  form_status: 'pending' | 'signed' | 'expired' | 'completed';
-  submission_date?: string;
-  created_at: string;
-  notes?: string;
-  signature?: string; // Added signature field
-  
-  // These fields are used in our TypeScript code but mapped differently when sending to the database
-  registrationId?: string; // For convenience in our code
-  formStatus?: 'pending' | 'signed' | 'expired' | 'completed'; // For convenience in our code
-  submissionDate?: string; // For convenience in our code
-  sentAt?: string; // For convenience in our code
+  formStatus: 'pending' | 'signed' | 'expired' | 'completed';
+  submissionDate?: string | null;
+  notes?: string | null;
+  signature?: string | null;
+  parentName?: string | null;
+  parentId?: string | null;
+  createdAt?: string;
+  sentAt?: string | null;
 }
 
-// Add missing types needed by other components
 export interface RegistrationWithDetails extends Registration {
   participant: Participant;
   product: Product;
@@ -132,4 +118,22 @@ export interface DailyActivity {
   numParticipants: number;
   currentMeetingNumber: number;
   totalMeetings: number;
+}
+
+// Leads module
+export type LeadStatus = 'חדש' | 'מטופל' | 'רשום' | 'לא מעוניין' | 'ביצירת קשר' | 'ישן';
+
+export interface Lead {
+  id: string;
+  name: string;                              // שם מלא
+  idNumber: string;                          // ת.ז.
+  phone: string;
+  email: string;
+  status: LeadStatus;
+  requestedProductType?: ProductType | null; // קורס / חוג / קייטנה
+  notes?: string | null;
+  convertedToParticipantId?: string | null;  // לשימוש עתידי — המרה לרישום
+  marketingConsent?: boolean;                // הסכמה לקבל עדכונים שיווקיים
+  createdAt: string;
+  updatedAt?: string;
 }

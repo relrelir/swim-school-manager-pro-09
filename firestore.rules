@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: check if user is admin (role stored in /users/{uid})
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Users: each user can read their own doc; only admins can write
+    match /users/{uid} {
+      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Seasons, Pools, Products: any authenticated user can read; only admins can write
+    match /seasons/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /pools/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /products/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Participants: any authenticated user can read; only admins can write
+    match /participants/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Registrations: any authenticated user can read; only admins can write
+    match /registrations/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Payments: any authenticated user can read; only admins can write
+    match /payments/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Health Declarations:
+    // - Public write allowed for token-based form submission (unauthenticated parents fill the form)
+    // - Authenticated users can read and create
+    // - Only admins can delete
+    match /healthDeclarations/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if true; // Public: parents submit the form via token link
+      allow update: if true; // Public: form submission updates the declaration
+      allow delete: if isAdmin();
+    }
+
+    // Leads: admin only
+    match /leads/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

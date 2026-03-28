@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Registration, Participant, Payment } from '@/types';
+import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 import { usePaymentHandlers } from './usePaymentHandlers';
 import { useRegistrationHandlers } from './useRegistrationHandlers';
 
@@ -19,6 +20,7 @@ export const useRegistrationManagement = (
 ) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [pendingHealthSend, setPendingHealthSend] = useState<HealthDeclarationSendInfo | null>(null);
 
   // Import sub-hooks
   const {
@@ -66,20 +68,39 @@ export const useRegistrationManagement = (
     if (result && result.length > 0) {
       // Find the new registration (should be the last one added)
       const newRegistration = result[result.length - 1];
-      
-      // Create a health declaration entry for the new registration
+
+      // Auto-create health declaration link for the new participant
       if (newRegistration) {
         const participant = getParticipantForRegistration(newRegistration);
         if (participant) {
-          await addHealthDeclaration({
-            registrationId: newRegistration.id,
-            phone: participant.phone,
-            formStatus: 'pending',
-            sentAt: new Date().toISOString()
-          });
+          try {
+            const healthDecl = await addHealthDeclaration({
+              participantId: participant.id,
+              token: '',
+              formStatus: 'pending',
+              submissionDate: null,
+              notes: null,
+              signature: null,
+              parentName: null,
+              parentId: null,
+              createdAt: new Date().toISOString(),
+              sentAt: null,
+            });
+            if (healthDecl) {
+              const healthFormUrl = `${window.location.origin}/health-form/${healthDecl.token}`;
+              setPendingHealthSend({
+                participantId: participant.id,
+                participantName: `${participant.firstName} ${participant.lastName}`,
+                phone: participant.phone,
+                healthFormUrl,
+              });
+            }
+          } catch (err) {
+            console.error('Error creating health declaration on registration:', err);
+          }
         }
       }
-      
+
       setRegistrations(result);
       setRefreshTrigger(prev => prev + 1);
       return result;
@@ -160,5 +181,7 @@ export const useRegistrationManagement = (
     handleAddPayment,
     handleApplyDiscount,
     handleDeleteRegistration,
+    pendingHealthSend,
+    clearPendingHealthSend: () => setPendingHealthSend(null),
   };
 };

@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Registration } from '@/types';
-import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon } from 'lucide-react';
+import { Registration, Payment } from '@/types';
+import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon, HistoryIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { generateRegistrationPdf } from '@/utils/generateRegistrationPdf';
 import { generateHealthDeclarationPdf } from '@/utils/generateHealthDeclarationPdf';
-import { supabase } from '@/integrations/supabase/client';
+import { getHealthDeclarationByParticipant } from '@/services/firebase/healthDeclarations';
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from '@/context/AuthContext';
+import PaymentHistoryDialog from './PaymentHistoryDialog';
 
 interface TableRowActionsProps {
   registration: Registration;
   hasPayments: boolean;
+  payments?: Payment[];
+  participantName?: string;
   onAddPayment: (registration: Registration) => void;
   onDeleteRegistration: (registrationId: string) => void;
 }
@@ -19,12 +22,15 @@ interface TableRowActionsProps {
 const TableRowActions: React.FC<TableRowActionsProps> = ({
   registration,
   hasPayments,
+  payments = [],
+  participantName = '',
   onAddPayment,
   onDeleteRegistration,
 }) => {
   const { isAdmin } = useAuth();
   const [isGeneratingRegPdf, setIsGeneratingRegPdf] = useState(false);
   const [isGeneratingHealthPdf, setIsGeneratingHealthPdf] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [hasHealthDeclaration, setHasHealthDeclaration] = useState(false);
   const [isCheckingDeclaration, setIsCheckingDeclaration] = useState(false);
   
@@ -39,19 +45,8 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
     try {
       setIsCheckingDeclaration(true);
       
-      // Direct Supabase query to get the latest health declaration status
-      const { data, error } = await supabase
-        .from('health_declarations')
-        .select('id')
-        .eq('participant_id', participantId);
-      
-      if (error) {
-        console.error("Error checking for health declaration:", error);
-        return;
-      }
-      
-      // Update state only if changed
-      const declarationExists = Boolean(data && data.length > 0);
+      const declaration = await getHealthDeclarationByParticipant(participantId);
+      const declarationExists = Boolean(declaration);
       if (hasHealthDeclaration !== declarationExists) {
         setHasHealthDeclaration(declarationExists);
       }
@@ -134,6 +129,13 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
   }, [hasPayments, onDeleteRegistration, registration.id, isAdmin]);
   
   return (
+    <>
+    <PaymentHistoryDialog
+      payments={payments}
+      participantName={participantName}
+      isOpen={isHistoryOpen}
+      onOpenChange={setIsHistoryOpen}
+    />
     <div className="flex gap-2 justify-end">
       <Tooltip>
         <TooltipTrigger asChild>
@@ -147,6 +149,21 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
         </TooltipTrigger>
         <TooltipContent>הוסף תשלום</TooltipContent>
       </Tooltip>
+
+      {hasPayments && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsHistoryOpen(true)}
+            >
+              <HistoryIcon className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>היסטוריית תשלומים</TooltipContent>
+        </Tooltip>
+      )}
       
       <Tooltip>
         <TooltipTrigger asChild>
@@ -208,6 +225,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
         </Tooltip>
       )}
     </div>
+    </>
   );
 };
 

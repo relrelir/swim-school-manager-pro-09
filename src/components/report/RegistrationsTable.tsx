@@ -1,12 +1,18 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PaymentStatus, RegistrationWithDetails } from '@/types';
+import { PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
 import { useData } from '@/context/DataContext';
+import TableRowActions from '@/components/participants/TableRowActions';
+
 interface RegistrationsTableProps {
   registrations: RegistrationWithDetails[];
+  onAddPayment: (registration: Registration) => void;
+  onDeleteRegistration: (registrationId: string) => void;
 }
 const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
-  registrations
+  registrations,
+  onAddPayment,
+  onDeleteRegistration,
 }) => {
   const {
     calculateMeetingProgress
@@ -27,6 +33,8 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
         return 'text-yellow-800 bg-yellow-100 bg-opacity-50 px-2 py-1 rounded';
       case 'הנחה':
         return 'text-blue-800 bg-blue-100 bg-opacity-50 px-2 py-1 rounded';
+      case 'לא שולם':
+        return 'text-red-800 bg-red-100 bg-opacity-50 px-2 py-1 rounded';
       default:
         return '';
     }
@@ -69,6 +77,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                 <TableHead>מספרי קבלות</TableHead>
                 <TableHead>מפגש נוכחי</TableHead>
                 <TableHead>סטטוס תשלום</TableHead>
+                <TableHead>פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,6 +124,16 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                     </TableCell>
                     <TableCell className={`font-semibold ${getStatusClassName(registration.paymentStatus)}`}>
                       {registration.paymentStatus}
+                    </TableCell>
+                    <TableCell>
+                      <TableRowActions
+                        registration={registration}
+                        hasPayments={(registration.payments?.length ?? 0) > 0}
+                        payments={registration.payments ?? []}
+                        participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
+                        onAddPayment={onAddPayment}
+                        onDeleteRegistration={onDeleteRegistration}
+                      />
                     </TableCell>
                   </TableRow>;
           })}

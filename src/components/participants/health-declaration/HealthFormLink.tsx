@@ -1,91 +1,96 @@
-
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
-import { Link, CheckCircle } from "lucide-react";
-import { createHealthDeclarationLink } from '@/context/data/healthDeclarations/createHealthDeclarationLink';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { Send } from 'lucide-react';
+import { useHealthDeclarationsContext } from '@/context/data/HealthDeclarationsProvider';
 import { useAuth } from '@/context/AuthContext';
+import SendHealthDeclarationDialog, {
+  type HealthDeclarationSendInfo,
+} from '@/components/participants/SendHealthDeclarationDialog';
 
 interface HealthFormLinkProps {
-  registrationId: string;
+  participantId: string;
+  participantName?: string;
+  participantPhone?: string;
   isDisabled?: boolean;
   className?: string;
 }
 
-const HealthFormLink = ({ registrationId, isDisabled, className }: HealthFormLinkProps) => {
+const HealthFormLink = ({
+  participantId,
+  participantName = '',
+  participantPhone = '',
+  isDisabled,
+  className,
+}: HealthFormLinkProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
+  const [sendInfo, setSendInfo] = useState<HealthDeclarationSendInfo | null>(null);
+  const { createHealthDeclarationLink } = useHealthDeclarationsContext();
   const { isAdmin } = useAuth();
-  
-  // Only admins can generate links
+
   if (!isAdmin()) {
     return (
-      <Button
-        variant="default"
-        className={className || "w-full"}
-        disabled={true}
-      >
-        <Link className="h-4 w-4 mr-2" />
-        צור קישור להצהרת בריאות
+      <Button variant="outline" size="sm" className={className} disabled>
+        <Send className="h-4 w-4 ml-1" />
+        שלח תזכורת
       </Button>
     );
   }
-  
-  const handleGenerateLink = async () => {
+
+  const handleSendReminder = async () => {
     setIsGenerating(true);
     try {
-      const link = await createHealthDeclarationLink(registrationId);
-      if (link) {
-        await copyToClipboard(link);
-        setIsCopied(true);
-        toast({
-          title: "הקישור הועתק",
-          description: "הדבק ושלח ללקוח",
+      // createHealthDeclarationLink resets existing token or creates new one
+      const path = await createHealthDeclarationLink(participantId);
+      if (path) {
+        const fullUrl = `${window.location.origin}${path}`;
+        setSendInfo({
+          participantId,
+          participantName,
+          phone: participantPhone,
+          healthFormUrl: fullUrl,
         });
-        
-        // Reset copied state after 3 seconds
-        setTimeout(() => {
-          setIsCopied(false);
-        }, 3000);
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: 'אירעה שגיאה ביצירת הקישור',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error generating health form link:', error);
       toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה ביצירת הקישור",
-        variant: "destructive",
+        title: 'שגיאה',
+        description: 'אירעה שגיאה ביצירת הקישור',
+        variant: 'destructive',
       });
     } finally {
       setIsGenerating(false);
     }
   };
-  
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-      return false;
-    }
-  };
-  
+
   return (
-    <Button
-      variant="default"
-      className={className || "w-full"}
-      onClick={handleGenerateLink}
-      disabled={isGenerating || isDisabled}
-    >
-      {isGenerating ? (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-      ) : isCopied ? (
-        <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-      ) : (
-        <Link className="h-4 w-4 mr-2" />
-      )}
-      צור קישור להצהרת בריאות
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className={className}
+        onClick={handleSendReminder}
+        disabled={isGenerating || isDisabled}
+      >
+        {isGenerating ? (
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent ml-1" />
+        ) : (
+          <Send className="h-3 w-3 ml-1" />
+        )}
+        שלח תזכורת
+      </Button>
+
+      <SendHealthDeclarationDialog
+        info={sendInfo}
+        onClose={() => setSendInfo(null)}
+      />
+    </>
   );
 };
 

@@ -13,7 +13,7 @@ interface ParticipantsContentProps {
   totalPaid: number;
   registrationsFilled: number;
   getParticipantForRegistration: (registration: Registration) => Participant | undefined;
-  getPaymentsForRegistration: (registrationId: string) => Payment[]; 
+  getPaymentsForRegistration: (registrationId: string) => Payment[];
   getHealthDeclarationForRegistration: (registrationId: string) => Promise<HealthDeclaration | undefined>;
   calculatePaymentStatus: (registration: Registration) => PaymentStatus;
   getStatusClassName: (status: string) => string;
@@ -21,6 +21,7 @@ interface ParticipantsContentProps {
   onDeleteRegistration: (id: string) => void;
   onUpdateHealthApproval: (registrationId: string, isApproved: boolean) => void;
   onOpenHealthForm: (registrationId: string) => void;
+  onEditParticipant: (participant: Participant) => void;
 }
 
 const ParticipantsContent: React.FC<ParticipantsContentProps> = ({
@@ -38,7 +39,8 @@ const ParticipantsContent: React.FC<ParticipantsContentProps> = ({
   onAddPayment,
   onDeleteRegistration,
   onUpdateHealthApproval,
-  onOpenHealthForm
+  onOpenHealthForm,
+  onEditParticipant,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -93,6 +95,7 @@ const ParticipantsContent: React.FC<ParticipantsContentProps> = ({
           onDeleteRegistration={onDeleteRegistration}
           onUpdateHealthApproval={updateHealthApprovalAdapter}
           onOpenHealthForm={onOpenHealthForm}
+          onEditParticipant={onEditParticipant}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />

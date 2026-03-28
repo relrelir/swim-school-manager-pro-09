@@ -2,17 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PrintableHealthDeclaration from '@/components/health-form/PrintableHealthDeclaration';
-import { getHealthDeclarationById } from '@/context/data/healthDeclarations/service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
-import { handleSupabaseError } from '@/context/data/utils';
+import { getHealthDeclarationByParticipant } from '@/services/firebase/healthDeclarations';
+import { getParticipant } from '@/services/firebase/participants';
 import { parseParentInfo, parseMedicalNotes } from '@/utils/pdf/healthDeclarationParser';
 
 const PrintableHealthDeclarationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const declarationId = searchParams.get('id');
-  
+  const participantId = searchParams.get('participantId');
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [healthData, setHealthData] = useState<{
@@ -24,74 +23,57 @@ const PrintableHealthDeclarationPage: React.FC = () => {
       notes: string;
       parentName: string;
       parentId: string;
-      signature?: string; // Add signature field
+      signature?: string;
     };
     submissionDate?: Date;
   } | null>(null);
 
   useEffect(() => {
-    const loadHealthDeclaration = async () => {
-      if (!declarationId) {
-        setError('מזהה הצהרת בריאות חסר');
+    const load = async () => {
+      if (!participantId) {
+        setError('מזהה משתתף חסר');
         setIsLoading(false);
         return;
       }
 
       try {
-        const healthDeclaration = await getHealthDeclarationById(declarationId);
-        
-        if (!healthDeclaration) {
-          throw new Error('לא נמצאה הצהרת בריאות');
-        }
+        const [healthDeclaration, participant] = await Promise.all([
+          getHealthDeclarationByParticipant(participantId),
+          getParticipant(participantId),
+        ]);
 
-        // Fetch participant data
-        const { data: participant, error: participantError } = await supabase
-          .from('participants')
-          .select('*')
-          .eq('id', healthDeclaration.participant_id)
-          .maybeSingle();
+        if (!healthDeclaration) throw new Error('לא נמצאה הצהרת בריאות');
+        if (!participant) throw new Error('לא נמצאו פרטי המשתתף');
 
-        if (participantError) {
-          handleSupabaseError(participantError, 'fetching participant');
-          throw new Error('שגיאה בטעינת פרטי המשתתף');
-        }
-
-        if (!participant) {
-          throw new Error('לא נמצאו פרטי המשתתף');
-        }
-
-        // Clean the notes text before parsing
         const rawNotes = healthDeclaration.notes || '';
-        const cleanedText = rawNotes.replace(/הורה\/אפוטרופוס:?/g, '');
-        
-        // Parse parent information and medical notes separately with improved parsing
         const parentInfo = parseParentInfo(rawNotes);
-        const medicalNotes = parseMedicalNotes(cleanedText);
+        const medicalNotes = parseMedicalNotes(rawNotes);
 
-        // Set health data with properly separated fields
         setHealthData({
-          participantName: `${participant.firstname} ${participant.lastname}`,
-          participantId: participant.idnumber,
+          participantName: `${participant.firstName} ${participant.lastName}`,
+          participantId: participant.idNumber,
           participantPhone: participant.phone,
           formState: {
             agreement: true,
-            notes: medicalNotes, // Use the correctly parsed medical notes
-            parentName: parentInfo.parentName, // Use the correctly parsed parent name
-            parentId: parentInfo.parentId, // Use the correctly parsed parent ID
-            signature: healthDeclaration.signature || undefined // Include signature if available
+            notes: healthDeclaration.notes ? medicalNotes : '',
+            parentName: healthDeclaration.parentName ?? parentInfo.parentName,
+            parentId: healthDeclaration.parentId ?? parentInfo.parentId,
+            signature: healthDeclaration.signature ?? undefined,
           },
-          submissionDate: healthDeclaration.submission_date ? new Date(healthDeclaration.submission_date) : new Date()
+          submissionDate: healthDeclaration.submissionDate
+            ? new Date(healthDeclaration.submissionDate)
+            : new Date(),
         });
-      } catch (error) {
-        console.error('Error loading health declaration:', error);
-        setError(error instanceof Error ? error.message : 'אירעה שגיאה בטעינת הצהרת הבריאות');
+      } catch (err) {
+        console.error('Error loading health declaration:', err);
+        setError(err instanceof Error ? err.message : 'אירעה שגיאה בטעינת הצהרת הבריאות');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadHealthDeclaration();
-  }, [declarationId]);
+    load();
+  }, [participantId]);
 
   if (isLoading) {
     return (
@@ -99,7 +81,7 @@ const PrintableHealthDeclarationPage: React.FC = () => {
         <Card className="max-w-3xl mx-auto">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center p-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               <p className="mt-4">טוען הצהרת בריאות...</p>
             </div>
           </CardContent>
@@ -120,15 +102,13 @@ const PrintableHealthDeclarationPage: React.FC = () => {
 
   return (
     <div className="container py-6">
-      {!isLoading && !error && healthData && (
-        <PrintableHealthDeclaration
-          participantName={healthData.participantName}
-          participantId={healthData.participantId}
-          participantPhone={healthData.participantPhone}
-          formState={healthData.formState}
-          submissionDate={healthData.submissionDate}
-        />
-      )}
+      <PrintableHealthDeclaration
+        participantName={healthData.participantName}
+        participantId={healthData.participantId}
+        participantPhone={healthData.participantPhone}
+        formState={healthData.formState}
+        submissionDate={healthData.submissionDate}
+      />
     </div>
   );
 };

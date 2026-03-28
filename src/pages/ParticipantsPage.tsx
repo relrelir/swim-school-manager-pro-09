@@ -1,16 +1,20 @@
 
 import React, { useState } from 'react';
 import { useParticipants } from '@/hooks/useParticipants';
+import { useData } from '@/context/DataContext';
 import { toast } from "@/components/ui/use-toast";
-import { Registration } from '@/types';
+import { Registration, Participant } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { exportRegistrationsToCSV } from '@/utils/exportUtils';
 
 import ParticipantsHeader from '@/components/participants/ParticipantsHeader';
 import ParticipantsContent from '@/components/participants/ParticipantsContent';
 import ParticipantsDialogs from '@/components/participants/ParticipantsDialogs';
+import SendHealthDeclarationDialog from '@/components/participants/SendHealthDeclarationDialog';
 
 const ParticipantsPage: React.FC = () => {
   const { isAdmin } = useAuth();
+  const { updateParticipant, getAllRegistrationsWithDetails } = useData();
   const {
     product,
     registrations,
@@ -41,6 +45,8 @@ const ParticipantsPage: React.FC = () => {
     handleDeleteRegistration,
     handleUpdateHealthApproval,
     handleOpenHealthForm,
+    pendingHealthSend,
+    clearPendingHealthSend,
     resetForm,
     getParticipantForRegistration,
     getPaymentsForRegistration,
@@ -114,6 +120,34 @@ const ParticipantsPage: React.FC = () => {
     handleApplyDiscount(amount, setIsAddPaymentOpen, registrationId);
   };
 
+  // CSV export for current product's participants
+  const handleExport = () => {
+    if (!isAdmin()) return;
+    if (!product) return;
+    const allWithDetails = getAllRegistrationsWithDetails();
+    const productRegs = allWithDetails.filter(r => r.productId === product.id);
+    if (productRegs.length === 0) {
+      toast({ title: "אין נתונים לייצוא", variant: "destructive" });
+      return;
+    }
+    const filename = `משתתפים-${product.name}-${new Date().toISOString().slice(0, 10)}.csv`;
+    exportRegistrationsToCSV(productRegs, filename);
+    toast({ title: "הייצוא הושלם", description: `יוצאו ${productRegs.length} רשומות` });
+  };
+
+  // Handler for editing a participant
+  const handleEditParticipant = (participant: Participant) => {
+    if (!isAdmin()) {
+      toast({
+        title: "אין הרשאה",
+        description: "אין לך הרשאה לערוך פרטי משתתפים",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateParticipant(participant);
+  };
+
   // Enhanced delete registration handler
   const secureDeleteRegistration = (registrationId: string) => {
     if (!isAdmin()) {
@@ -133,7 +167,7 @@ const ParticipantsPage: React.FC = () => {
       {/* Page Header */}
       <ParticipantsHeader 
         product={product}
-        onExport={() => {}} // This is now empty as we're removing the export functionality
+        onExport={handleExport}
         onAddParticipant={handleOpenAddParticipant}
       />
 
@@ -154,6 +188,13 @@ const ParticipantsPage: React.FC = () => {
         onDeleteRegistration={secureDeleteRegistration}
         onUpdateHealthApproval={updateHealthApprovalById}
         onOpenHealthForm={handleOpenHealthForm}
+        onEditParticipant={handleEditParticipant}
+      />
+
+      {/* Auto-send health declaration dialog — opens after new registration */}
+      <SendHealthDeclarationDialog
+        info={pendingHealthSend}
+        onClose={clearPendingHealthSend}
       />
 
       {/* Dialogs */}

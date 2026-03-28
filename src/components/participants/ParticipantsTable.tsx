@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
 import { Participant, PaymentStatus, Registration, Payment, HealthDeclaration } from '@/types';
 import TableHealthStatus from './TableHealthStatus';
 import TablePaymentInfo from './TablePaymentInfo';
 import TableReceiptNumbers from './TableReceiptNumbers';
 import TableRowActions from './TableRowActions';
 import ParticipantsTableHeader from './ParticipantsTableHeader';
+import EditParticipantDialog from './EditParticipantDialog';
 import { formatCurrencyForTableUI } from '@/utils/formatters';
 
 interface ParticipantsTableProps {
@@ -19,6 +22,7 @@ interface ParticipantsTableProps {
   onDeleteRegistration: (id: string) => void;
   onUpdateHealthApproval: (registrationId: string, isApproved: boolean) => void;
   onOpenHealthForm: (registrationId: string) => void;
+  onEditParticipant: (participant: Participant) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
 }
@@ -34,9 +38,11 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
   onDeleteRegistration,
   onUpdateHealthApproval,
   onOpenHealthForm,
+  onEditParticipant,
   searchQuery,
   setSearchQuery
 }) => {
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   // Helper to calculate discount amount
   const calculateDiscountAmount = (registration: Registration) => {
     return registration.discountAmount || 0;
@@ -120,18 +126,38 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                   {status}
                 </TableCell>
                 <TableCell>
-                  <TableRowActions 
-                    registration={registration}
-                    hasPayments={hasPayments}
-                    onAddPayment={onAddPayment}
-                    onDeleteRegistration={onDeleteRegistration}
-                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="ערוך פרטי משתתף"
+                      onClick={() => setEditingParticipant(participant)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <TableRowActions
+                      registration={registration}
+                      hasPayments={hasPayments}
+                      payments={registrationPayments}
+                      participantName={`${participant.firstName} ${participant.lastName}`}
+                      onAddPayment={onAddPayment}
+                      onDeleteRegistration={onDeleteRegistration}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
+
+      {/* Edit Participant Dialog */}
+      <EditParticipantDialog
+        participant={editingParticipant}
+        isOpen={!!editingParticipant}
+        onOpenChange={(open) => { if (!open) setEditingParticipant(null); }}
+        onSave={(updated) => { onEditParticipant(updated); setEditingParticipant(null); }}
+      />
     </div>
   );
 };

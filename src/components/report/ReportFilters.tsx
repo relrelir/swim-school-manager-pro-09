@@ -52,6 +52,7 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({ filters, setFilt
               <SelectItem value="מלא / הנחה">מלא / הנחה</SelectItem>
               <SelectItem value="חלקי / הנחה">חלקי / הנחה</SelectItem>
               <SelectItem value="הנחה">הנחה</SelectItem>
+              <SelectItem value="לא שולם">לא שולם</SelectItem>
             </SelectContent>
           </Select>
         </div>

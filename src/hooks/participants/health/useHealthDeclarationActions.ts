@@ -11,7 +11,7 @@ export const useHealthDeclarationActions = (
   participants: Participant[],
   registrations: Registration[],
   setCurrentHealthDeclaration: (healthDecl: {
-    registrationId: string;
+    participantId: string;
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
@@ -29,10 +29,10 @@ export const useHealthDeclarationActions = (
       return;
     }
 
-    const declaration = getHealthDeclarationForRegistration(registrationId);
-    
+    const declaration = getHealthDeclarationForRegistration(registration.participantId);
+
     setCurrentHealthDeclaration({
-      registrationId,
+      participantId: registration.participantId,
       participantName: `${participant.firstName} ${participant.lastName}`,
       phone: participant.phone || '',
       declaration,

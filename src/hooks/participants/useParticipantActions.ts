@@ -73,7 +73,9 @@ export const useParticipantActions = (
     handleAddParticipant: baseHandleAddParticipant,
     handleAddPayment: baseHandleAddPayment,
     handleApplyDiscount: baseHandleApplyDiscount,
-    handleDeleteRegistration: managementHandleDeleteRegistration
+    handleDeleteRegistration: managementHandleDeleteRegistration,
+    pendingHealthSend,
+    clearPendingHealthSend,
   } = useRegistrationManagement(
     product,
     productId,
@@ -183,6 +185,8 @@ export const useParticipantActions = (
     handleApplyDiscount,
     handleDeleteRegistration,
     handleUpdateHealthApproval,
-    handleOpenHealthForm
+    handleOpenHealthForm,
+    pendingHealthSend,
+    clearPendingHealthSend,
   };
 };

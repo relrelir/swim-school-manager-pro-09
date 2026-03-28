@@ -2,18 +2,20 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { useData } from '@/context/DataContext';
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import { Pool } from '@/types';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import BackButton from '@/components/ui/back-button';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import AddPoolDialog from '@/components/pools/AddPoolDialog';
+import EditPoolDialog from '@/components/pools/EditPoolDialog';
 import { usePools } from '@/hooks/usePools';
 import { useAuth } from '@/context/AuthContext';
 
@@ -22,13 +24,15 @@ const PoolsPage = () => {
   const navigate = useNavigate();
   const { seasons, getProductsByPool } = useData();
   const [isAddPoolDialogOpen, setIsAddPoolDialogOpen] = useState(false);
+  const [editingPool, setEditingPool] = useState<Pool | null>(null);
   const { isAdmin } = useAuth();
-  
+
   // Use the existing hooks
-  const { 
+  const {
     pools: seasonPools,
     handleAddPool,
-    handleDeletePool
+    handleDeletePool,
+    handleUpdatePool,
   } = usePools(seasonId);
 
   const currentSeason = useMemo(
@@ -103,16 +107,26 @@ const PoolsPage = () => {
                   צפה במוצרים
                 </Button>
                 {isAdmin() && (
-                  <Button 
-                    variant="destructive" 
-                    className="w-full"
-                    onClick={() => handleDeletePool(pool.id)}
-                    disabled={hasProducts}
-                    title={hasProducts ? "לא ניתן למחוק בריכה עם מוצרים" : "מחק בריכה"}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    מחק בריכה
-                  </Button>
+                  <div className="flex gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setEditingPool(pool)}
+                    >
+                      <Pencil className="h-4 w-4 ml-1" />
+                      ערוך
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => handleDeletePool(pool.id)}
+                      disabled={hasProducts}
+                      title={hasProducts ? "לא ניתן למחוק בריכה עם מוצרים" : "מחק בריכה"}
+                    >
+                      <Trash2 className="h-4 w-4 ml-1" />
+                      מחק
+                    </Button>
+                  </div>
                 )}
               </CardFooter>
             </Card>
@@ -127,13 +141,21 @@ const PoolsPage = () => {
       </div>
 
       {/* Add Pool Dialog */}
-      <AddPoolDialog 
-        isOpen={isAddPoolDialogOpen} 
-        onOpenChange={setIsAddPoolDialogOpen} 
+      <AddPoolDialog
+        isOpen={isAddPoolDialogOpen}
+        onOpenChange={setIsAddPoolDialogOpen}
         onAddPool={(name) => {
           handleAddPool(name);
           setIsAddPoolDialogOpen(false);
         }}
+      />
+
+      {/* Edit Pool Dialog */}
+      <EditPoolDialog
+        pool={editingPool}
+        isOpen={!!editingPool}
+        onOpenChange={(open) => { if (!open) setEditingPool(null); }}
+        onSave={(updated) => { handleUpdatePool(updated); setEditingPool(null); }}
       />
     </div>
   );

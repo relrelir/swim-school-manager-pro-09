@@ -1,7 +1,6 @@
-import { Participant, Product, Registration, Season, Pool, Payment, PaymentStatus, HealthDeclaration } from '@/types';
-
-// Import the DailyActivity type or define it here
+import { Participant, Product, Registration, Season, Pool, Payment, PaymentStatus, HealthDeclaration, Lead } from '@/types';
 import { DailyActivity, RegistrationWithDetails } from '@/types';
+import { LeadsContextType } from './LeadsProvider';
 
 export interface SeasonsContextType {
   seasons: Season[];
@@ -61,15 +60,26 @@ export interface HealthDeclarationsContextType {
   healthDeclarations: HealthDeclaration[];
   addHealthDeclaration: (healthDeclaration: Omit<HealthDeclaration, 'id'>) => Promise<HealthDeclaration | undefined>;
   updateHealthDeclaration: (id: string, updates: Partial<HealthDeclaration>) => Promise<HealthDeclaration | undefined>;
-  getHealthDeclarationForRegistration: (registrationId: string) => Promise<HealthDeclaration | undefined>;
+  getHealthDeclarationForRegistration: (participantId: string) => Promise<HealthDeclaration | undefined>;
   deleteHealthDeclaration: (id: string) => Promise<void>;
-  createHealthDeclarationLink: (registrationId: string) => Promise<string | undefined>;
+  createHealthDeclarationLink: (participantId: string) => Promise<string | undefined>;
   getHealthDeclarationByToken: (token: string) => Promise<HealthDeclaration | undefined>;
   loading: boolean;
 }
 
-export interface CombinedDataContextType extends SeasonsContextType, PoolsContextType, ProductsContextType, ParticipantsContextType, RegistrationsContextType, PaymentsContextType, HealthDeclarationsContextType {
+export interface CombinedDataContextType
+  extends SeasonsContextType,
+    PoolsContextType,
+    ProductsContextType,
+    ParticipantsContextType,
+    RegistrationsContextType,
+    PaymentsContextType,
+    HealthDeclarationsContextType,
+    LeadsContextType {
   getAllRegistrationsWithDetails: () => RegistrationWithDetails[];
   calculateMeetingProgress: (product: Product) => { current: number; total: number };
   getDailyActivities: (date: string) => DailyActivity[];
 }
+
+// Re-export for convenience
+export type { LeadsContextType };

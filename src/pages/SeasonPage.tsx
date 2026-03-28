@@ -8,7 +8,7 @@ import { Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SeasonPage() {
-  const { seasons, deleteSeason, getPoolsBySeason } = useData();
+  const { seasons, deleteSeason, updateSeason, getPoolsBySeason } = useData();
   const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
   const [seasonPoolCounts, setSeasonPoolCounts] = useState<Record<string, number>>({});
   const { isAdmin } = useAuth();
@@ -45,6 +45,7 @@ export default function SeasonPage() {
         seasons={seasons}
         seasonPools={seasonPoolCounts}
         onDeleteSeason={handleDeleteSeason}
+        onEditSeason={(updated) => updateSeason(updated)}
       />
 
       <AddSeasonDialog 

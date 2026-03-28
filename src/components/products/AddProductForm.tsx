@@ -114,6 +114,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, currentSeason
     setNewProduct({ ...newProduct, price: value });
   };
 
+  const handleDiscountAmountChange = (value: number | null) => {
+    setNewProduct({ ...newProduct, discountAmount: value, effectivePrice: value ? newProduct.price - value : newProduct.price });
+  };
+
   const handleMaxParticipantsChange = (value: number) => {
     setNewProduct({ ...newProduct, maxParticipants: value });
   };
@@ -134,6 +138,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, currentSeason
         startTime={newProduct.startTime}
         daysOfWeek={newProduct.daysOfWeek}
         price={newProduct.price}
+        discountAmount={newProduct.discountAmount}
         maxParticipants={newProduct.maxParticipants}
         notes={newProduct.notes}
         seasonStartDate={today}
@@ -145,6 +150,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, currentSeason
         onStartTimeChange={handleStartTimeChange}
         onDaysOfWeekChange={handleDaysOfWeekChange}
         onPriceChange={handlePriceChange}
+        onDiscountAmountChange={handleDiscountAmountChange}
         onMaxParticipantsChange={handleMaxParticipantsChange}
         onNotesChange={handleNotesChange}
       />

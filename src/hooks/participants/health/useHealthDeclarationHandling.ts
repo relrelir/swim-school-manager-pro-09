@@ -8,7 +8,7 @@ import { Participant, Registration, HealthDeclaration } from '@/types';
 export const useHealthDeclarationHandling = () => {
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [currentHealthDeclaration, setCurrentHealthDeclaration] = useState<{
-    registrationId: string;
+    participantId: string;
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;

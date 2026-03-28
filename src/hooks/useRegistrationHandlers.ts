@@ -21,6 +21,7 @@ export const useRegistrationHandlers = (
       paidAmount: number;
       receiptNumber: string;
       discountApproved: boolean;
+      discountAmount?: number | null;
     },
     resetForm: () => void,
     setIsAddParticipantOpen: (open: boolean) => void
@@ -59,6 +60,7 @@ export const useRegistrationHandlers = (
         paidAmount: registrationData.paidAmount,
         receiptNumber: registrationData.receiptNumber,
         discountApproved: registrationData.discountApproved,
+        discountAmount: registrationData.discountAmount ?? null,
         registrationDate: new Date().toISOString(),
       };
       
