@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Registration, Participant } from '@/types';
-import { useParticipantHandlers } from '../useParticipantHandlers';
-import { useRegistrationManagement } from '../useRegistrationManagement';
+import { usePaymentActions } from '../usePaymentActions';
 import { useParticipantHealth } from '../useParticipantHealth';
-import { useParticipantAdapters } from '../useParticipantAdapters';
-import { toast } from "@/components/ui/use-toast";
+import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 
 /**
- * Hook for participant-related actions and handlers
+ * Participant action handlers — simplified to a single layer.
+ *
+ * Uses usePaymentActions directly instead of the former 5-layer chain:
+ *   useRegistrationManagement → usePaymentHandlers → useRegistrationHandlers
+ *   → useParticipantAdapters → useParticipantHandlers
  */
 export const useParticipantActions = (
   productId: string | undefined,
@@ -25,30 +28,22 @@ export const useParticipantActions = (
   resetForm: () => void,
   currentRegistration: Registration | null
 ) => {
-  const {
-    updateParticipant,
-    addParticipant,
-    addRegistration,
-    updateRegistration,
-    deleteRegistration,
-    deleteParticipant,
-    addPayment,
-    getPaymentsByRegistration,
-    getRegistrationsByProduct,
-    addHealthDeclaration,
-    updateHealthDeclaration: baseUpdateHealthDeclaration,
-    getHealthDeclarationForRegistration,
-    deleteHealthDeclaration
-  } = dataContext;
-
-  const updateHealthDeclaration = (declaration: any) => {
-    return baseUpdateHealthDeclaration(declaration.id, declaration);
-  };
+  const { updateParticipant, getHealthDeclarationForRegistration, addHealthDeclaration } =
+    dataContext;
 
   const {
-    handleOpenHealthForm: baseHandleOpenHealthForm,
-    handleUpdateHealthApproval
-  } = useParticipantHealth(
+    registerWithInitialPayment,
+    addPaymentToRegistration,
+    applyDiscountToRegistration,
+    deleteRegistrationWithCleanup,
+  } = usePaymentActions(dataContext);
+
+  // pendingHealthSend: shown after a new registration so the user can send the
+  // health-form link via WhatsApp / email / copy.
+  const [pendingHealthSend, setPendingHealthSend] = useState<HealthDeclarationSendInfo | null>(null);
+
+  // ── Health declaration handling ────────────────────────────────────────────
+  const { handleOpenHealthForm, handleUpdateHealthApproval } = useParticipantHealth(
     getHealthDeclarationForRegistration,
     addHealthDeclaration,
     async (id: string, data: Partial<Participant>): Promise<Participant> => {
@@ -59,9 +54,8 @@ export const useParticipantActions = (
         phone: data.phone || '',
         healthApproval: data.healthApproval !== undefined ? data.healthApproval : false,
         idNumber: data.idNumber || '',
-        ...data
+        ...data,
       } as Participant;
-
       await updateParticipant(participantToUpdate);
       return participantToUpdate;
     },
@@ -69,114 +63,58 @@ export const useParticipantActions = (
     registrations
   );
 
-  const {
-    handleAddParticipant: baseHandleAddParticipant,
-    handleAddPayment: baseHandleAddPayment,
-    handleApplyDiscount: baseHandleApplyDiscount,
-    handleDeleteRegistration: managementHandleDeleteRegistration,
-    pendingHealthSend,
-    clearPendingHealthSend,
-  } = useRegistrationManagement(
-    product,
-    productId,
-    participants,
-    addParticipant,
-    addRegistration,
-    updateRegistration,
-    deleteRegistration,
-    addPayment,
-    getPaymentsByRegistration,
-    getRegistrationsByProduct,
-    updateParticipant,
-    addHealthDeclaration
-  );
+  // ── handleAddParticipant ───────────────────────────────────────────────────
+  const handleAddParticipant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productId) return;
 
-  const {
-    adaptedHandleOpenHealthForm,
-    handleAddParticipantWrapper,
-    handleAddPaymentWrapper,
-    handleApplyDiscountAdapter
-  } = useParticipantAdapters(
-    updateParticipant,
-    baseHandleOpenHealthForm,
-    baseHandleAddParticipant,
-    baseHandleAddPayment,
-    baseHandleApplyDiscount
-  );
+    const result = await registerWithInitialPayment(productId, newParticipant, registrationData);
+    if (!result) return;   // error toast already shown inside registerWithInitialPayment
 
-  const {
-    handleOpenHealthForm,
-    handleAddParticipant: wrapperHandleAddParticipant,
-    handleAddPayment: wrapperHandleAddPayment,
-    handleApplyDiscount
-  } = useParticipantHandlers(
-    adaptedHandleOpenHealthForm || baseHandleOpenHealthForm,
-    baseHandleAddParticipant,
-    baseHandleAddPayment,
-    baseHandleApplyDiscount,
-    newParticipant,
-    registrationData,
-    getParticipantForRegistration,
-    registrations
-  );
+    // healthSendInfo is set when the health declaration was created successfully
+    if (result.healthSendInfo) {
+      setPendingHealthSend(result.healthSendInfo);
+    }
 
-  const handleAddParticipant = (e: React.FormEvent) => {
-    return wrapperHandleAddParticipant(e, resetForm, setIsAddParticipantOpen);
+    resetForm();
+    setIsAddParticipantOpen(false);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
-  const handleAddPayment = (e: React.FormEvent) => {
-    return wrapperHandleAddPayment(e, newPayment, setIsAddPaymentOpen, setNewPayment);
-  };
+  // ── handleAddPayment ───────────────────────────────────────────────────────
+  const handleAddPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const registrationId = newPayment.registrationId || currentRegistration?.id;
+    if (!registrationId) return;
 
-  const handleDeleteRegistration = async (registrationId: string) => {
-    try {
-      const payments = await getPaymentsByRegistration(registrationId);
-      if (payments.length > 0) {
-        toast({
-          title: "לא ניתן למחוק",
-          description: "לא ניתן למחוק רישום שבוצע עבורו תשלום",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const confirmDelete = window.confirm("האם אתה בטוח שברצונך למחוק את המשתתף?");
-      if (!confirmDelete) {
-        return;
-      }
-
-      const registration = registrations.find(r => r.id === registrationId);
-      if (!registration) {
-        console.error("Registration not found:", registrationId);
-        return;
-      }
-
-      const participantId = registration.participantId;
-
-      const healthDecl = await getHealthDeclarationForRegistration(registrationId);
-      if (healthDecl) {
-        await deleteHealthDeclaration(healthDecl.id);
-      }
-
-      await deleteRegistration(registrationId);
-
-      const otherRegistrations = registrations.filter(
-        r => r.participantId === participantId && r.id !== registrationId
-      );
-
-      if (otherRegistrations.length === 0) {
-        await deleteParticipant(participantId);
-      }
-
-      setRefreshTrigger(prev => prev + 1);
-    } catch (error) {
-      console.error("Error deleting registration:", error);
-      toast({
-        title: "שגיאה במחיקת רישום",
-        description: "אירעה שגיאה בעת מחיקת הרישום",
-        variant: "destructive",
+    const success = await addPaymentToRegistration(
+      registrationId,
+      newPayment.amount,
+      newPayment.receiptNumber,
+      newPayment.paymentDate
+    );
+    if (success) {
+      setIsAddPaymentOpen(false);
+      setNewPayment({
+        amount: 0,
+        receiptNumber: '',
+        paymentDate: new Date().toISOString().split('T')[0],
       });
     }
+  };
+
+  // ── handleApplyDiscount ────────────────────────────────────────────────────
+  const handleApplyDiscount = async (discountAmount: number, registrationId?: string) => {
+    const regId = registrationId || currentRegistration?.id;
+    if (!regId) return;
+    const success = await applyDiscountToRegistration(regId, discountAmount);
+    if (success) setIsAddPaymentOpen(false);
+  };
+
+  // ── handleDeleteRegistration ───────────────────────────────────────────────
+  const handleDeleteRegistration = async (registrationId: string) => {
+    await deleteRegistrationWithCleanup(registrationId, registrations);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   return {
@@ -187,6 +125,6 @@ export const useParticipantActions = (
     handleUpdateHealthApproval,
     handleOpenHealthForm,
     pendingHealthSend,
-    clearPendingHealthSend,
+    clearPendingHealthSend: () => setPendingHealthSend(null),
   };
 };

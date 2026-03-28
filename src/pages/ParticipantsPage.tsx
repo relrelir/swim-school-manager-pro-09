@@ -117,7 +117,9 @@ const ParticipantsPage: React.FC = () => {
       return;
     }
     
-    handleApplyDiscount(amount, setIsAddPaymentOpen, registrationId);
+    // handleApplyDiscount already calls setIsAddPaymentOpen(false) on success —
+    // do NOT pass setIsAddPaymentOpen as an argument (it would be used as registrationId!)
+    handleApplyDiscount(amount, registrationId);
   };
 
   // CSV export for current product's participants

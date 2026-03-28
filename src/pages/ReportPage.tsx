@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/context/DataContext';
-import { Registration } from '@/types';
+import { RegistrationWithDetails } from '@/types';
 import { exportRegistrationsToCSV } from '@/utils/exportUtils';
 import { ReportFilters } from '@/utils/reportFilters';
 import ReportSummaryCards from '@/components/report/ReportSummaryCards';
@@ -12,13 +12,20 @@ import { filterRegistrations } from '@/utils/reportFilters';
 import AddPaymentDialog from '@/components/participants/AddPaymentDialog';
 import { FileDown, Filter } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { usePaymentActions } from '@/hooks/usePaymentActions';
 
 const ReportPage: React.FC = () => {
+  const dataContext = useData();
   const {
     seasons, products, pools, participants,
     getAllRegistrationsWithDetails,
-    addPayment, updateRegistration, deleteRegistration,
-  } = useData();
+  } = dataContext;
+
+  const {
+    addPaymentToRegistration,
+    applyDiscountToRegistration,
+    deleteRegistrationWithCleanup,
+  } = usePaymentActions(dataContext);
   const [filters, setFilters] = useState<ReportFilters>({
     search: '',
     receiptNumber: '',
@@ -31,7 +38,7 @@ const ReportPage: React.FC = () => {
 
   // Payment dialog state
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
-  const [currentRegistration, setCurrentRegistration] = useState<Registration | null>(null);
+  const [currentRegistration, setCurrentRegistration] = useState<RegistrationWithDetails | null>(null);
   const [newPayment, setNewPayment] = useState({
     amount: 0,
     receiptNumber: '',
@@ -42,7 +49,7 @@ const ReportPage: React.FC = () => {
   const filteredRegistrations = filterRegistrations(allRegistrations, filters);
 
   // Payment handlers
-  const handleOpenAddPayment = (registration: Registration) => {
+  const handleOpenAddPayment = (registration: RegistrationWithDetails) => {
     setCurrentRegistration(registration);
     setNewPayment({ amount: 0, receiptNumber: '', paymentDate: new Date().toISOString().split('T')[0] });
     setIsAddPaymentOpen(true);
@@ -51,23 +58,24 @@ const ReportPage: React.FC = () => {
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentRegistration) return;
-    await addPayment({ ...newPayment, registrationId: currentRegistration.id });
-    await updateRegistration({ ...currentRegistration, paidAmount: currentRegistration.paidAmount + newPayment.amount });
-    setIsAddPaymentOpen(false);
-    toast({ title: 'תשלום נוסף בהצלחה' });
+    const success = await addPaymentToRegistration(
+      currentRegistration.id,
+      newPayment.amount,
+      newPayment.receiptNumber,
+      newPayment.paymentDate
+    );
+    if (success) setIsAddPaymentOpen(false);
   };
 
   const handleApplyDiscount = async (amount: number, registrationId?: string) => {
     const regId = registrationId ?? currentRegistration?.id;
     if (!regId) return;
-    const reg = allRegistrations.find(r => r.id === regId);
-    if (!reg) return;
-    await updateRegistration({ ...reg, discountApproved: true, discountAmount: amount });
-    setIsAddPaymentOpen(false);
-    toast({ title: 'הנחה אושרה בהצלחה' });
+    const success = await applyDiscountToRegistration(regId, amount);
+    if (success) setIsAddPaymentOpen(false);
   };
 
-  const handleDeleteRegistration = (id: string) => deleteRegistration(id);
+  const handleDeleteRegistration = (id: string) =>
+    deleteRegistrationWithCleanup(id, allRegistrations);
 
   // Handle exporting to CSV
   const handleExport = () => {

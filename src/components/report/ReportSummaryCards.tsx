@@ -12,17 +12,11 @@ const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({ registrations }
   // Calculate totals
   const totalRegistrations = registrations.length;
   
-  // Calculate total effective amount (after discounts)
-  const totalEffectiveAmount = registrations.reduce((sum, reg) => 
-    sum + Math.max(0, reg.requiredAmount - (reg.discountApproved ? (reg.discountAmount || 0) : 0)), 0);
-  
-  // Calculate total paid from payments (or fallback to paidAmount)
-  // IMPORTANT: This excludes the discount amounts
-  const totalPaidAmount = registrations.reduce((sum, reg) => {
-    if (!reg.payments) return sum + reg.paidAmount;
-    // Only sum the actual payment amounts, excluding discounts
-    return sum + reg.payments.reduce((pSum, payment) => pSum + payment.amount, 0);
-  }, 0);
+  // Calculate total effective amount (after discounts) — single source of truth from RegistrationWithDetails
+  const totalEffectiveAmount = registrations.reduce((sum, reg) => sum + reg.effectiveRequiredAmount, 0);
+
+  // paidAmount is already computed from payment docs in getAllRegistrationsWithDetails
+  const totalPaidAmount = registrations.reduce((sum, reg) => sum + reg.paidAmount, 0);
   
   // Balance = amount still owed (positive = debt, zero/negative = fully paid)
   const balance = totalEffectiveAmount - totalPaidAmount;

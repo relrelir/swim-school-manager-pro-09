@@ -40,23 +40,6 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
     }
   };
 
-  // Helper to calculate actual payments (excluding discounts)
-  const calculateActualPaidAmount = (registration: RegistrationWithDetails) => {
-    if (!registration.payments) return registration.paidAmount;
-    const actualPayments = registration.payments.filter(p => p.receiptNumber !== '');
-    return actualPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  };
-
-  // Helper to get discount amount
-  const getDiscountAmount = (registration: RegistrationWithDetails) => {
-    return registration.discountAmount || 0;
-  };
-
-  // Helper to calculate amount required after discount
-  const getEffectiveRequiredAmount = (registration: RegistrationWithDetails) => {
-    const discountAmount = registration.discountAmount || 0;
-    return Math.max(0, registration.requiredAmount - (registration.discountApproved ? discountAmount : 0));
-  };
   return <>
       {registrations.length === 0 ? <div className="text-center p-10 bg-gray-50 rounded-lg">
           <p className="text-lg text-gray-500">לא נמצאו רישומים מתאימים לסינון שנבחר.</p>
@@ -85,9 +68,9 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
             // Get receipt numbers from payments
             const actualPayments = registration.payments ? registration.payments.filter(p => p.receiptNumber !== '') : [];
             const receiptNumbers = actualPayments.map(p => p.receiptNumber).join(', ');
-            const actualPaidAmount = calculateActualPaidAmount(registration);
-            const discountAmount = getDiscountAmount(registration);
-            const effectiveRequiredAmount = getEffectiveRequiredAmount(registration);
+            const actualPaidAmount = registration.paidAmount;
+            const discountAmount = registration.discountAmount || 0;
+            const effectiveRequiredAmount = registration.effectiveRequiredAmount;
 
             // Calculate meeting progress
             const meetingProgress = calculateMeetingProgress(registration.product);

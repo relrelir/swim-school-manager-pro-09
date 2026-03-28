@@ -1,31 +1,15 @@
 
-import { Product, Registration, Payment } from '@/types';
+import { Product, Registration, RegistrationWithDetails } from '@/types';
 
-export const useSummaryCalculations = (registrations: Registration[], product?: Product, paymentsForRegistrations?: (registration: Registration) => Payment[]) => {
-  // Calculate totals
+export const useSummaryCalculations = (registrations: RegistrationWithDetails[], product?: Product) => {
   const totalParticipants = registrations.length;
   const registrationsFilled = product ? (totalParticipants / (product.maxParticipants || 1)) * 100 : 0;
-  
-  // Calculate the total expected amount considering discounts
-  const totalExpected = registrations.reduce((sum, reg) => {
-    // Apply any discount to the required amount
-    const discountAmount = reg.discountAmount || 0;
-    const effectiveRequiredAmount = Math.max(0, reg.requiredAmount - (reg.discountApproved ? discountAmount : 0));
-    return sum + effectiveRequiredAmount;
-  }, 0);
-  
-  // Total paid amount - calculate from actual payments if available, or fall back to paidAmount
-  // IMPORTANT: This should NOT include discount amounts
-  const totalPaid = registrations.reduce((sum, reg) => {
-    if (paymentsForRegistrations) {
-      // Get actual payments and sum their amounts, excluding discounts
-      const actualPayments = paymentsForRegistrations(reg);
-      const actualPaymentSum = actualPayments.reduce((pSum, payment) => pSum + payment.amount, 0);
-      return sum + actualPaymentSum;
-    }
-    // Fall back to paidAmount (without adding discount)
-    return sum + reg.paidAmount;
-  }, 0);
+
+  // effectiveRequiredAmount and paidAmount are both pre-computed by getAllRegistrationsWithDetails:
+  // - effectiveRequiredAmount = requiredAmount minus any approved discount
+  // - paidAmount              = sum of all payment docs (never stale)
+  const totalExpected = registrations.reduce((sum, reg) => sum + reg.effectiveRequiredAmount, 0);
+  const totalPaid     = registrations.reduce((sum, reg) => sum + reg.paidAmount, 0);
 
   return {
     totalParticipants,

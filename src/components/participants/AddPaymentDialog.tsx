@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Participant, Registration } from '@/types';
+import { Participant, RegistrationWithDetails } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 
 interface AddPaymentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  currentRegistration: Registration | null;
+  currentRegistration: RegistrationWithDetails | null;
   participants: Participant[];
   newPayment: {
     amount: number;
@@ -44,12 +44,6 @@ const AddPaymentDialog: React.FC<AddPaymentDialogProps> = ({
   const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
   const { isAdmin } = useAuth();
 
-  // Calculate total paid including discount
-  const calculateTotalPaid = (registration: Registration) => {
-    // Add the discount amount to paid amount if approved
-    const paidWithDiscount = registration.paidAmount + (registration.discountApproved ? (registration.discountAmount || 0) : 0);
-    return paidWithDiscount;
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -65,22 +59,47 @@ const AddPaymentDialog: React.FC<AddPaymentDialogProps> = ({
           <div className="space-y-4 py-2">
             {currentRegistration && (
               <>
-                <div className="bg-blue-50 p-4 rounded">
+                <div className="bg-blue-50 p-4 rounded space-y-1">
                   <p className="font-semibold">הוספת תשלום עבור משתתף:</p>
                   {participants.find(p => p.id === currentRegistration.participantId) && (
                     <p>
                       {`${participants.find(p => p.id === currentRegistration.participantId)?.firstName} ${participants.find(p => p.id === currentRegistration.participantId)?.lastName}`}
                     </p>
                   )}
+                  {/* Show original price only when a discount is active, for context */}
+                  {currentRegistration.discountApproved && currentRegistration.discountAmount ? (
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">מחיר מקורי:</span>{' '}
+                      {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.requiredAmount)}
+                      <span className="text-green-600 mr-1">
+                        {` (הנחה: ${Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.discountAmount)})`}
+                      </span>
+                    </p>
+                  ) : null}
                   <p>
-                    <span className="font-medium">סכום לתשלום:</span> {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.requiredAmount)}
+                    <span className="font-medium">סכום לתשלום:</span>{' '}
+                    {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.effectiveRequiredAmount)}
                   </p>
                   <p>
-                    <span className="font-medium">סכום ששולם עד כה:</span> {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(calculateTotalPaid(currentRegistration))}
-                    {currentRegistration.discountApproved && currentRegistration.discountAmount ? (
-                      <span className="text-sm text-green-600 mr-2">(כולל הנחה של {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.discountAmount)})</span>
-                    ) : null}
+                    <span className="font-medium">שולם עד כה:</span>{' '}
+                    {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(currentRegistration.paidAmount)}
                   </p>
+                  {(() => {
+                    const balance = currentRegistration.effectiveRequiredAmount - currentRegistration.paidAmount;
+                    if (balance > 0) return (
+                      <p className="text-amber-700 font-medium">
+                        <span>יתרה לתשלום:</span>{' '}
+                        {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(balance)}
+                      </p>
+                    );
+                    if (balance < 0) return (
+                      <p className="text-green-700 font-medium">
+                        <span>תשלום ביתר:</span>{' '}
+                        {Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(Math.abs(balance))}
+                      </p>
+                    );
+                    return <p className="text-green-700 font-medium">שולם במלואו ✓</p>;
+                  })()}
                 </div>
 
                 {/* Only show discount checkbox for admins */}

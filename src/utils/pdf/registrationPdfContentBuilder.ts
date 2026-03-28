@@ -1,6 +1,7 @@
 
 import { jsPDF } from 'jspdf';
-import { Registration, Participant, Payment } from '@/types';
+import { Registration, Participant, Payment, RegistrationWithDetails } from '@/types';
+import { calculatePaymentStatus } from '@/services/firebase/registrations';
 import { formatCurrency } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { addPdfTitle, addPdfDate, addSectionTitle, createDataTable, createPlainTextTable } from './pdfHelpers';
@@ -66,29 +67,29 @@ export function buildRegistrationPDF(
     // Registration information - MODIFIED as per requirements
     addSectionTitle(pdf, 'פרטי רישום:', yPosition + 15);
     
-    // Calculate effective required amount (after discount)
+    // Use pre-computed effectiveRequiredAmount from RegistrationWithDetails when available;
+    // fall back to the inline formula for plain Registration objects.
     const discountAmount = registration.discountAmount || 0;
-    const effectiveRequiredAmount = Math.max(0, registration.requiredAmount - (registration.discountApproved ? discountAmount : 0));
-    
-    // UPDATED: Calculate payment status text taking into account discounts
-    let paymentStatusText;
-    if (registration.discountApproved) {
-      // For cases with approved discount
-      if (registration.paidAmount >= effectiveRequiredAmount) {
-        paymentStatusText = 'שולם במלואו';
-      } else {
-        paymentStatusText = 'תשלום חלקי';
-      }
-    } else {
-      // Regular calculation without discount
-      if (registration.paidAmount >= registration.requiredAmount) {
-        paymentStatusText = 'שולם במלואו';
-      } else if (registration.paidAmount > 0) {
-        paymentStatusText = 'תשלום חלקי';
-      } else {
-        paymentStatusText = 'טרם שולם';
-      }
-    }
+    const effectiveRequiredAmount =
+      (registration as RegistrationWithDetails).effectiveRequiredAmount ??
+      Math.max(0, registration.requiredAmount - (registration.discountApproved ? discountAmount : 0));
+
+    // Compute actual paid amount from the payments array passed to this function.
+    // This is always authoritative (same source used by DataContext) and avoids reading
+    // the potentially-stale registration.paidAmount field from Firestore.
+    const actualPaidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+
+    // Use the canonical calculatePaymentStatus for consistent 7-state status logic.
+    // Map to a 3-state human-readable PDF label.
+    const canonicalStatus = calculatePaymentStatus({ ...registration, paidAmount: actualPaidAmount });
+    const paymentStatusText =
+      canonicalStatus === 'מלא' || canonicalStatus === 'מלא / הנחה' || canonicalStatus === 'הנחה'
+        ? 'שולם במלואו'
+        : canonicalStatus === 'יתר'
+        ? 'שולם ביתר'
+        : actualPaidAmount > 0
+        ? 'תשלום חלקי'
+        : 'טרם שולם';
     
     // Format the registration date with day first and explicit LTR control
     const formattedRegistrationDate = forceLtrDirection(format(new Date(registration.registrationDate), 'dd/MM/yyyy'));

@@ -1,5 +1,5 @@
 
-import { Registration, Participant, Payment, PaymentStatus } from '@/types';
+import { Registration, RegistrationWithDetails, Participant, Payment, PaymentStatus } from '@/types';
 import { format } from 'date-fns';
 
 // Helper function to format currency
@@ -23,7 +23,7 @@ export interface ParticipantExportData {
 }
 
 export function prepareParticipantsData(
-  registrations: Registration[],
+  registrations: RegistrationWithDetails[],
   getParticipantForRegistration: (registration: Registration) => Participant | undefined,
   getPaymentsForRegistration: (registration: Registration) => Payment[],
   calculatePaymentStatus: (registration: Registration) => PaymentStatus
@@ -38,15 +38,12 @@ export function prepareParticipantsData(
         .filter(p => p.receiptNumber)
         .map(p => p.receiptNumber)
         .join(', ');
-      
-      // Calculate effective required amount after discount
-      const discountAmount = registration.discountAmount || 0;
-      const effectiveRequiredAmount = Math.max(0, registration.requiredAmount - (registration.discountApproved ? discountAmount : 0));
-      
-      // Calculate actual paid amount from payments collection
-      const actualPaidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-      
-      const paymentStatus = calculatePaymentStatus(registration);
+
+      // effectiveRequiredAmount is always pre-computed by getAllRegistrationsWithDetails
+      const effectiveRequiredAmount = registration.effectiveRequiredAmount;
+      // paidAmount is recomputed from payment docs by getAllRegistrationsWithDetails
+      const actualPaidAmount = registration.paidAmount;
+      const paymentStatus = registration.paymentStatus;
       
       const registrationDate = registration.registrationDate 
         ? format(new Date(registration.registrationDate), 'dd/MM/yyyy') 
@@ -60,7 +57,7 @@ export function prepareParticipantsData(
         effectiveAmount: formatCurrency(effectiveRequiredAmount),
         paidAmount: formatCurrency(actualPaidAmount),
         receiptNumbers,
-        discountAmount: formatCurrency(registration.discountApproved ? discountAmount : 0),
+        discountAmount: formatCurrency(registration.discountApproved ? (registration.discountAmount || 0) : 0),
         discountApplied: registration.discountApproved ? 'כן' : 'לא',
         healthApproval: participant.healthApproval ? 'כן' : 'לא',
         paymentStatus,

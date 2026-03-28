@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
-import { Participant, PaymentStatus, Registration, Payment, HealthDeclaration } from '@/types';
+import { Participant, PaymentStatus, Registration, RegistrationWithDetails, Payment, HealthDeclaration } from '@/types';
 import TableHealthStatus from './TableHealthStatus';
 import TablePaymentInfo from './TablePaymentInfo';
 import TableReceiptNumbers from './TableReceiptNumbers';
@@ -12,13 +12,13 @@ import EditParticipantDialog from './EditParticipantDialog';
 import { formatCurrencyForTableUI } from '@/utils/formatters';
 
 interface ParticipantsTableProps {
-  registrations: Registration[];
+  registrations: RegistrationWithDetails[];
   getParticipantForRegistration: (registration: Registration) => Participant | undefined;
   getPaymentsForRegistration: (registration: Registration) => Payment[];
   getHealthDeclarationForRegistration: (registrationId: string) => Promise<HealthDeclaration | undefined>;
   calculatePaymentStatus: (registration: Registration) => PaymentStatus;
   getStatusClassName: (status: string) => string;
-  onAddPayment: (registration: Registration) => void;
+  onAddPayment: (registration: RegistrationWithDetails) => void;
   onDeleteRegistration: (id: string) => void;
   onUpdateHealthApproval: (registrationId: string, isApproved: boolean) => void;
   onOpenHealthForm: (registrationId: string) => void;
@@ -43,16 +43,6 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
   setSearchQuery
 }) => {
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
-  // Helper to calculate discount amount
-  const calculateDiscountAmount = (registration: Registration) => {
-    return registration.discountAmount || 0;
-  };
-
-  // Helper to calculate effective amount required after discount
-  const calculateEffectiveRequiredAmount = (registration: Registration) => {
-    const discountAmount = registration.discountAmount || 0;
-    return Math.max(0, registration.requiredAmount - (registration.discountApproved ? discountAmount : 0));
-  };
 
   return (
     <div className="space-y-4">
@@ -81,9 +71,11 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
           {registrations.map((registration) => {
             const participant = getParticipantForRegistration(registration);
             const registrationPayments = getPaymentsForRegistration(registration);
-            const discountAmount = calculateDiscountAmount(registration);
-            const effectiveRequiredAmount = calculateEffectiveRequiredAmount(registration);
-            const status = calculatePaymentStatus(registration);
+            const discountAmount = registration.discountAmount || 0;
+            // effectiveRequiredAmount is pre-computed by getAllRegistrationsWithDetails
+            const effectiveRequiredAmount = registration.effectiveRequiredAmount;
+            // paymentStatus is pre-computed; no need to call calculatePaymentStatus again
+            const status = registration.paymentStatus;
             const hasPayments = registrationPayments.length > 0;
             
             if (!participant) return null;

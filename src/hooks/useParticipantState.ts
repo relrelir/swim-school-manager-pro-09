@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Product, Participant, Registration } from '@/types';
+import { Product, Participant, Registration, RegistrationWithDetails } from '@/types';
 
 /**
  * Hook for managing participant-related state
@@ -9,7 +9,7 @@ export const useParticipantState = (product?: Product) => {
   const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
-  const [currentRegistration, setCurrentRegistration] = useState<Registration | null>(null);
+  const [currentRegistration, setCurrentRegistration] = useState<RegistrationWithDetails | null>(null);
   const [currentHealthDeclaration, setCurrentHealthDeclaration] = useState<{
     registrationId: string;
     participantName: string;

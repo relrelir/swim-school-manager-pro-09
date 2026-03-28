@@ -100,8 +100,9 @@ export interface RegistrationWithDetails extends Registration {
   participant: Participant;
   product: Product;
   season: Season;
-  payments?: Payment[];
-  paymentStatus: PaymentStatus;
+  payments: Payment[];                 // always populated by getAllRegistrationsWithDetails
+  paymentStatus: PaymentStatus;        // pre-computed from payment docs
+  effectiveRequiredAmount: number;     // requiredAmount after approved discount — single source of truth
 }
 
 export interface PaymentDetails {

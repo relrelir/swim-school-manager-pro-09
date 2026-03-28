@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Participant, Registration, HealthDeclaration } from '@/types';
+import { Participant, Registration, RegistrationWithDetails, HealthDeclaration } from '@/types';
 import AddParticipantDialog from '@/components/participants/AddParticipantDialog';
 import AddPaymentDialog from '@/components/participants/AddPaymentDialog';
 import HealthDeclarationForm from '@/components/participants/HealthDeclarationForm';
@@ -28,7 +28,7 @@ interface ParticipantsDialogsProps {
     discountApproved: boolean;
     discountAmount?: number | null;
   }>>;
-  currentRegistration: Registration | null;
+  currentRegistration: RegistrationWithDetails | null;
   participants: Participant[];
   newPayment: {
     amount: number;

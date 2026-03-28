@@ -193,7 +193,6 @@ export default function LeadsPage() {
                         <Button
                           size="sm" variant="ghost"
                           title="שייך לקורס"
-                          disabled={!!lead.convertedToParticipantId}
                           onClick={() => setConvertLead(lead)}
                         >
                           <ClipboardList className="h-3 w-3" />

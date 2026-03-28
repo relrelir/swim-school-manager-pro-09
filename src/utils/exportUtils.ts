@@ -71,14 +71,13 @@ export const exportRegistrationsToCSV = (registrations: RegistrationWithDetails[
     // Format the meeting progress in Hebrew format
     const meetingProgress = `${meetingCurrent} מתוך ${meetingTotal}`;
     
-    // Calculate effective required amount (after discount)
-    const discountAmount = reg.discountAmount || 0;
-    const effectiveRequiredAmount = Math.max(0, reg.requiredAmount - (reg.discountApproved ? discountAmount : 0));
-    
+    // effectiveRequiredAmount is always pre-computed by getAllRegistrationsWithDetails
+    const effectiveRequiredAmount = reg.effectiveRequiredAmount;
+
     return {
       ...reg,
       paidAmount: totalPaid,
-      effectiveRequiredAmount: effectiveRequiredAmount,
+      effectiveRequiredAmount,
       receiptNumbers: receiptNumbers,
       meetingProgress: meetingProgress,
       discountAmount: reg.discountApproved ? (reg.discountAmount || 0) : 0

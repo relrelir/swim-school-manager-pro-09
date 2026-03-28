@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { SeasonsProvider, useSeasonsContext } from './data/SeasonsProvider';
 import { PoolsProvider, usePoolsContext } from './data/PoolsProvider';
 import { ProductsProvider, useProductsContext } from './data/ProductsProvider';
@@ -34,7 +34,7 @@ const DataConsumer: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const healthDeclarationsContext = useHealthDeclarationsContext();
   const leadsContext = useLeadsContext();
 
-  const getAllRegistrationsWithDetails = () => {
+  const getAllRegistrationsWithDetails = useCallback(() => {
     const { registrations } = registrationsContext;
     const { products } = productsContext;
     const { seasons } = seasonsContext;
@@ -51,12 +51,45 @@ const DataConsumer: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         if (!product || !participant || !season) return null;
 
         const registrationPayments = payments.filter((p) => p.registrationId === registration.id);
-        const paymentStatus = registrationsContext.calculatePaymentStatus(registration);
 
-        return { ...registration, product, participant, season, paymentStatus, payments: registrationPayments };
+        // Compute paidAmount from actual payment documents — the payments collection is
+        // the authoritative source. The stored registration.paidAmount may be stale if a
+        // previous updateRegistration call failed silently.
+        const actualPaidAmount = registrationPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        // effectiveRequiredAmount: requiredAmount minus any approved discount.
+        // Computed here ONCE so every consumer (table, summary cards, export, PDF) reads
+        // the same value and never duplicates the discount formula.
+        const disc = registration.discountApproved && registration.discountAmount
+          ? registration.discountAmount
+          : 0;
+        const effectiveRequiredAmount = Math.max(0, registration.requiredAmount - disc);
+
+        const paymentStatus = registrationsContext.calculatePaymentStatus({
+          ...registration,
+          paidAmount: actualPaidAmount,
+        });
+
+        return {
+          ...registration,
+          paidAmount: actualPaidAmount,
+          effectiveRequiredAmount,
+          product,
+          participant,
+          season,
+          paymentStatus,
+          payments: registrationPayments,
+        };
       })
       .filter(Boolean) as ReturnType<CombinedDataContextType['getAllRegistrationsWithDetails']>;
-  };
+  }, [
+    registrationsContext.registrations,
+    registrationsContext.calculatePaymentStatus,
+    productsContext.products,
+    seasonsContext.seasons,
+    participantsContext.participants,
+    paymentsContext.payments,
+  ]);
 
   // Fixed meeting calculation: counts only actual meeting days, not approximate weeks
   const calculateMeetingProgress = (product: Product) => {

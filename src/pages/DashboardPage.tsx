@@ -36,16 +36,18 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  const { registrations, products, participants, payments, leads, seasons } = useData();
+  const { registrations, products, participants, payments, leads, seasons, getAllRegistrationsWithDetails } = useData();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const stats = useMemo(() => {
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    const totalRequired = registrations.reduce((sum, r) => {
-      const disc = r.discountApproved ? (r.discountAmount || 0) : 0;
-      return sum + Math.max(0, r.requiredAmount - disc);
-    }, 0);
+    // Use pre-computed effectiveRequiredAmount from RegistrationWithDetails — single source of truth
+    // that already accounts for approved discounts and is kept in sync with payment docs.
+    const totalRequired = getAllRegistrationsWithDetails().reduce(
+      (sum, r) => sum + r.effectiveRequiredAmount,
+      0
+    );
     const healthApproved = participants.filter((p) => p.healthApproval).length;
     const newLeads = leads.filter((l) => l.status === 'חדש').length;
 

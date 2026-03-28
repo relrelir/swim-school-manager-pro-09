@@ -156,24 +156,33 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
     setError('');
     try {
       const batch = writeBatch(db);
+      const alreadyConverted = !!lead.convertedToParticipantId;
 
-      // 1. Create Participant
-      const [firstName, ...rest] = lead.name.trim().split(' ');
-      const lastName = rest.join(' ') || firstName;
-      const participantRef = doc(collection(db, 'participants'));
-      batch.set(participantRef, {
-        firstName,
-        lastName,
-        idNumber: lead.idNumber,
-        phone: lead.phone,
-        healthApproval: false,
-        createdAt: new Date().toISOString(),
-      });
+      let participantId: string;
 
-      // 2. Create Registration
+      if (alreadyConverted) {
+        // Lead was already converted — reuse the existing participant
+        participantId = lead.convertedToParticipantId!;
+      } else {
+        // First conversion — create a new Participant
+        const [firstName, ...rest] = lead.name.trim().split(' ');
+        const lastName = rest.join(' ') || firstName;
+        const participantRef = doc(collection(db, 'participants'));
+        batch.set(participantRef, {
+          firstName,
+          lastName,
+          idNumber: lead.idNumber,
+          phone: lead.phone,
+          healthApproval: false,
+          createdAt: new Date().toISOString(),
+        });
+        participantId = participantRef.id;
+      }
+
+      // Create Registration (always)
       const registrationRef = doc(collection(db, 'registrations'));
       batch.set(registrationRef, {
-        participantId: participantRef.id,
+        participantId,
         productId,
         registrationDate: new Date().toISOString().split('T')[0],
         requiredAmount: selectedProduct.effectivePrice ?? selectedProduct.price,
@@ -184,12 +193,13 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
         createdAt: new Date().toISOString(),
       });
 
-      // 3. Update Lead
-      batch.update(doc(db, 'leads', lead.id), {
-        status: 'רשום',
-        convertedToParticipantId: participantRef.id,
-        updatedAt: new Date().toISOString(),
-      });
+      // Update Lead
+      const leadUpdate: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+      if (!alreadyConverted) {
+        leadUpdate.status = 'רשום';
+        leadUpdate.convertedToParticipantId = participantId;
+      }
+      batch.update(doc(db, 'leads', lead.id), leadUpdate);
 
       await batch.commit();
       setDone(true);
@@ -213,7 +223,9 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
             </div>
             <p className="text-lg font-semibold">הרישום בוצע בהצלחה!</p>
             <p className="text-sm text-muted-foreground text-center">
-              {lead.name} נרשם/ה למוצר ונוסף/ה לרשימת המשתתפים.
+              {lead.convertedToParticipantId
+                ? `${lead.name} נרשם/ה למוצר נוסף בהצלחה.`
+                : `${lead.name} נרשם/ה למוצר ונוסף/ה לרשימת המשתתפים.`}
             </p>
             <Button className="w-full" onClick={() => { onOpenChange(false); reset(); }}>סגור</Button>
           </div>

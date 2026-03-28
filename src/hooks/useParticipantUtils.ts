@@ -1,5 +1,5 @@
 
-import { Participant, PaymentStatus, Registration, Payment } from '@/types';
+import { Participant, PaymentStatus, Registration, Payment, RegistrationWithDetails } from '@/types';
 
 export const useParticipantUtils = (
   participants: Participant[], 
@@ -11,9 +11,15 @@ export const useParticipantUtils = (
     return participants.find(p => p.id === registration.participantId);
   };
 
-  // Get payments for a registration
+  // Get payments for a registration.
+  // Prefer the pre-computed list embedded in RegistrationWithDetails — it was built in
+  // the same render cycle as paidAmount/paymentStatus/effectiveRequiredAmount, so the
+  // table display is always consistent with the summary cards and status badge.
   const getPaymentsForRegistration = (registration: Registration): Payment[] => {
-    return payments.filter(payment => payment.registrationId === registration.id);
+    if ('payments' in registration) {
+      return (registration as RegistrationWithDetails).payments;
+    }
+    return payments.filter(p => p.registrationId === registration.id);
   };
 
   // Get appropriate CSS class for payment status

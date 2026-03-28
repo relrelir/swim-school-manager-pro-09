@@ -19,10 +19,13 @@ const COL = 'payments';
 function fromDoc(id: string, data: Record<string, unknown>): Payment {
   return {
     id,
-    registrationId: data.registrationId as string,
-    amount: data.amount as number,
-    paymentDate: data.paymentDate as string,
-    receiptNumber: data.receiptNumber as string,
+    registrationId: (data.registrationId as string) ?? '',
+    // amount may be stored as string in legacy docs — coerce to number
+    amount: Number(data.amount) || 0,
+    // paymentDate may be missing on legacy docs — fall back to empty string so
+    // the document is still included (ordering is done in JS, not Firestore)
+    paymentDate: (data.paymentDate as string) ?? '',
+    receiptNumber: (data.receiptNumber as string) ?? '',
   };
 }
 
@@ -40,7 +43,7 @@ export async function getPaymentsByRegistration(registrationId: string): Promise
   );
   const snap = await getDocs(q);
   const payments = snap.docs.map((d) => fromDoc(d.id, d.data()));
-  return payments.sort((a, b) => b.paymentDate.localeCompare(a.paymentDate));
+  return payments.sort((a, b) => (b.paymentDate || '').localeCompare(a.paymentDate || ''));
 }
 
 export async function createPayment(data: Omit<Payment, 'id'>): Promise<Payment> {
@@ -57,8 +60,15 @@ export async function deletePayment(id: string): Promise<void> {
 }
 
 export function subscribeToPayments(callback: (payments: Payment[]) => void): () => void {
-  const q = query(collection(db, COL), orderBy('paymentDate', 'desc'));
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => fromDoc(d.id, d.data())));
+  // Do NOT use orderBy('paymentDate') here — Firestore silently excludes any
+  // document that is missing the ordered field.  Legacy payment docs without
+  // paymentDate would become invisible, causing paidAmount to be under-counted
+  // and payment statuses to show "חלקי" even when fully paid.
+  // We fetch the whole collection and sort client-side instead.
+  return onSnapshot(collection(db, COL), (snap) => {
+    const payments = snap.docs.map((d) => fromDoc(d.id, d.data()));
+    // Sort descending by date; empty/missing dates sort last
+    payments.sort((a, b) => (b.paymentDate || '').localeCompare(a.paymentDate || ''));
+    callback(payments);
   });
 }

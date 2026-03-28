@@ -40,8 +40,29 @@ export const RegistrationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateRegistration = async (registration: Registration) => {
     try {
-      const { id, ...data } = registration;
-      await registrationsService.updateRegistration(id, data);
+      // Destructure only the known Registration fields to prevent Firestore from receiving
+      // undefined values or extra nested objects (e.g. from RegistrationWithDetails).
+      const {
+        id,
+        participantId,
+        productId,
+        registrationDate,
+        requiredAmount,
+        paidAmount,
+        discountAmount,
+        discountApproved,
+        receiptNumber,
+      } = registration;
+      await registrationsService.updateRegistration(id, {
+        participantId,
+        productId,
+        registrationDate,
+        requiredAmount,
+        paidAmount,
+        discountAmount,
+        discountApproved,
+        receiptNumber,
+      });
     } catch (err) {
       console.error('Error updating registration:', err);
       toast({ title: 'שגיאה', description: 'אירעה שגיאה בעדכון הרישום', variant: 'destructive' });
