@@ -190,7 +190,7 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
                     <TableHead className="text-right">תאריך</TableHead>
                     <TableHead className="text-right">סכום</TableHead>
                     <TableHead className="text-right">מס׳ קבלה</TableHead>
-                    <TableHead />
+                    <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
