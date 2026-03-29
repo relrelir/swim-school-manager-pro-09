@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
 import { useData } from '@/context/DataContext';
 import TableRowActions from '@/components/participants/TableRowActions';
+import HealthFormLink from '@/components/participants/health-declaration/HealthFormLink';
 
 interface RegistrationsTableProps {
   registrations: RegistrationWithDetails[];
@@ -109,14 +110,21 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                       {registration.paymentStatus}
                     </TableCell>
                     <TableCell>
-                      <TableRowActions
-                        registration={registration}
-                        hasPayments={(registration.payments?.length ?? 0) > 0}
-                        payments={registration.payments ?? []}
-                        participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
-                        onAddPayment={onAddPayment}
-                        onDeleteRegistration={onDeleteRegistration}
-                      />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <HealthFormLink
+                          participantId={registration.participant.id}
+                          participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
+                          participantPhone={registration.participant.phone}
+                        />
+                        <TableRowActions
+                          registration={registration}
+                          hasPayments={(registration.payments?.length ?? 0) > 0}
+                          payments={registration.payments ?? []}
+                          participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
+                          onAddPayment={onAddPayment}
+                          onDeleteRegistration={onDeleteRegistration}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>;
           })}

@@ -1,8 +1,8 @@
 /**
  * Client-side utilities for sending health declaration links
- * via WhatsApp (wa.me deep link) and email (mailto: link).
+ * via WhatsApp (wa.me deep link) and Gmail (compose URL).
  *
- * These open the user's default WhatsApp / email client pre-filled
+ * These open the user's WhatsApp / Gmail in a new tab pre-filled
  * with the form link — no backend required.
  */
 
@@ -28,7 +28,9 @@ export function sendHealthDeclarationByEmail(
   const body = encodeURIComponent(
     `שלום,\n\nאנא מלאו את הצהרת הבריאות לפני תחילת הפעילות:\n${healthFormUrl}\n\nתודה`
   );
-  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  const to = email ? encodeURIComponent(email) : '';
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1${to ? `&to=${to}` : ''}&su=${subject}&body=${body}`;
+  window.open(gmailUrl, '_blank');
 }
 
 export function copyHealthDeclarationLink(healthFormUrl: string): Promise<boolean> {

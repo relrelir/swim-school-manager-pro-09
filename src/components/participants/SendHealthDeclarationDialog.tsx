@@ -39,7 +39,7 @@ const SendHealthDeclarationDialog = ({
   const handleEmail = () => {
     if (!info.healthFormUrl) return;
     sendHealthDeclarationByEmail(info.participantName, '', info.healthFormUrl);
-    toast({ title: 'נפתח לקוח מייל', description: 'שלחו את המייל המוכן לחתימה על הצהרת הבריאות' });
+    toast({ title: 'נפתח Gmail', description: 'שלחו את המייל המוכן לחתימה על הצהרת הבריאות' });
   };
 
   const handleCopy = async () => {
