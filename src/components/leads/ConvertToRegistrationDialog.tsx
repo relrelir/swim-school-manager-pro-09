@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { writeBatch, doc, collection } from 'firebase/firestore';
+import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,19 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Check, PlusCircle, X } from 'lucide-react';
+import { Check, PlusCircle, X, MessageCircle, Mail, Copy, CheckCircle } from 'lucide-react';
 import { getProductsBySeason, createProduct } from '@/services/firebase/products';
 import { useSeasonProducts } from '@/hooks/useSeasonProducts';
+import { useData } from '@/context/DataContext';
+import { toast } from '@/components/ui/use-toast';
+import {
+  sendHealthDeclarationByWhatsApp,
+  sendHealthDeclarationByEmail,
+  copyHealthDeclarationLink,
+} from '@/services/notifications/sendHealthDeclaration';
 import ProductFormFields from '@/components/products/ProductFormFields';
 import type { Lead, Season, Pool, Product, ProductType } from '@/types';
+import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 
 /* ── helper ── */
 const makeEmptyProduct = (seasonId: string, poolId: string): Omit<Product, 'id'> => ({
@@ -43,6 +51,8 @@ interface Props {
 }
 
 export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpenChange, onDone }: Props) {
+  const { addPayment, addHealthDeclaration } = useData();
+
   /* ── registration state ── */
   const [seasonId, setSeasonId] = useState('');
   const [poolId, setPoolId] = useState('');
@@ -53,6 +63,8 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [healthSendInfo, setHealthSendInfo] = useState<HealthDeclarationSendInfo | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   /* ── add-product inline state ── */
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -109,7 +121,7 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
   const reset = () => {
     setSeasonId(''); setPoolId(''); setProductId('');
     setAllSeasonProducts([]); setReceiptNumber(''); setPaidAmount('');
-    setError(''); setDone(false);
+    setError(''); setDone(false); setHealthSendInfo(null); setLinkCopied(false);
     setShowAddProduct(false);
     setNewProduct(makeEmptyProduct('', ''));
     setCalculatedEndDate(null);
@@ -202,8 +214,56 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
       batch.update(doc(db, 'leads', lead.id), leadUpdate);
 
       await batch.commit();
+
+      // Save initial payment via PaymentsProvider (optimistic update + consistent code path).
+      if (paid > 0) {
+        const savedPayment = await addPayment({
+          registrationId: registrationRef.id,
+          amount: paid,
+          receiptNumber: receiptNumber.trim(),
+          paymentDate: new Date().toISOString().split('T')[0],
+        });
+        if (!savedPayment) {
+          toast({
+            title: 'אזהרה',
+            description: 'הרישום נוצר אך התשלום הראשוני לא נשמר. יש להוסיפו ידנית.',
+            variant: 'destructive',
+          });
+        }
+      }
+
+      // Auto-create health declaration so the participant can sign digitally.
+      try {
+        const healthDecl = await addHealthDeclaration({
+          participantId,
+          token: '',
+          formStatus: 'pending',
+          submissionDate: null,
+          notes: null,
+          signature: null,
+          parentName: null,
+          parentId: null,
+          createdAt: new Date().toISOString(),
+          sentAt: null,
+        });
+        if (healthDecl?.token) {
+          setHealthSendInfo({
+            participantId,
+            participantName: lead.name,
+            phone: lead.phone,
+            healthFormUrl: `${window.location.origin}/health-form/${healthDecl.token}`,
+          });
+        }
+      } catch (healthErr) {
+        console.error('Error creating health declaration:', healthErr);
+        // Non-fatal — registration already succeeded
+      }
+
       setDone(true);
-      onDone();
+      // NOTE: Do NOT call onDone() here.
+      // onDone() unmounts the component in the same React render batch as setDone(true),
+      // which prevents the success screen (and health declaration send options) from showing.
+      // The dialog is closed by the user via the "סגור/דלג" button → onOpenChange(false).
     } catch (e) {
       console.error(e);
       setError('אירעה שגיאה. אנא נסה שנית.');
@@ -217,7 +277,7 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
     return (
       <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
         <DialogContent className="max-w-sm" dir="rtl">
-          <div className="flex flex-col items-center gap-4 py-6">
+          <div className="flex flex-col items-center gap-4 py-4">
             <div className="rounded-full bg-green-100 p-4">
               <Check className="h-10 w-10 text-green-600" />
             </div>
@@ -227,7 +287,47 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
                 ? `${lead.name} נרשם/ה למוצר נוסף בהצלחה.`
                 : `${lead.name} נרשם/ה למוצר ונוסף/ה לרשימת המשתתפים.`}
             </p>
-            <Button className="w-full" onClick={() => { onOpenChange(false); reset(); }}>סגור</Button>
+
+            {healthSendInfo && (
+              <div className="w-full space-y-2 pt-2 border-t">
+                <p className="text-sm font-medium text-center">שליחת הצהרת בריאות</p>
+                <Button
+                  className="w-full gap-2 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => {
+                    sendHealthDeclarationByWhatsApp(healthSendInfo.participantName, healthSendInfo.phone, healthSendInfo.healthFormUrl);
+                    toast({ title: 'נפתח WhatsApp', description: 'שלחו את ההודעה לחתימה' });
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  שלח ב-WhatsApp ({healthSendInfo.phone})
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    sendHealthDeclarationByEmail(healthSendInfo.participantName, '', healthSendInfo.healthFormUrl);
+                    toast({ title: 'נפתח לקוח מייל' });
+                  }}
+                >
+                  <Mail className="h-4 w-4" />
+                  שלח במייל
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={async () => {
+                    const ok = await copyHealthDeclarationLink(healthSendInfo.healthFormUrl);
+                    if (ok) { setLinkCopied(true); toast({ title: 'הקישור הועתק' }); setTimeout(() => setLinkCopied(false), 3000); }
+                  }}
+                >
+                  {linkCopied ? <><CheckCircle className="h-4 w-4 text-green-500" /> הועתק!</> : <><Copy className="h-4 w-4" /> העתק קישור</>}
+                </Button>
+              </div>
+            )}
+
+            <Button className="w-full" variant={healthSendInfo ? 'ghost' : 'default'} onClick={() => { onOpenChange(false); reset(); }}>
+              {healthSendInfo ? 'דלג — אשלח מאוחר יותר' : 'סגור'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

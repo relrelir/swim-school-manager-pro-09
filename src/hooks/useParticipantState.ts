@@ -24,7 +24,7 @@ export const useParticipantState = (product?: Product) => {
     healthApproval: false
   });
   const [registrationData, setRegistrationData] = useState({
-    requiredAmount: product?.price || 0,
+    requiredAmount: product ? (product.effectivePrice ?? product.price) : 0,
     paidAmount: 0,
     receiptNumber: '',
     discountApproved: false,
@@ -37,10 +37,11 @@ export const useParticipantState = (product?: Product) => {
   });
 
   // Update registration data when product changes
-  if (product && registrationData.requiredAmount !== product.price) {
+  const effectiveProductPrice = product ? (product.effectivePrice ?? product.price) : 0;
+  if (product && registrationData.requiredAmount !== effectiveProductPrice) {
     setRegistrationData(prev => ({
       ...prev,
-      requiredAmount: product.price
+      requiredAmount: effectiveProductPrice
     }));
   }
 
@@ -54,11 +55,11 @@ export const useParticipantState = (product?: Product) => {
       healthApproval: false
     });
     setRegistrationData({
-      requiredAmount: product?.price || 0,
+      requiredAmount: product ? (product.effectivePrice ?? product.price) : 0,
       paidAmount: 0,
       receiptNumber: '',
       discountApproved: false,
-    discountAmount: null as number | null
+      discountAmount: null as number | null,
     });
   };
 
