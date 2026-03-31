@@ -48,6 +48,7 @@ export interface Participant {
   firstName: string;
   lastName: string;
   phone: string;
+  email?: string;
   healthApproval: boolean;
   idNumber: string;
 }

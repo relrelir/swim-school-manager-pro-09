@@ -1,13 +1,19 @@
 
-import { Product, Registration, RegistrationWithDetails } from '@/types';
+import { Product, RegistrationWithDetails } from '@/types';
 
+/**
+ * Aggregates financial and occupancy totals for a list of RegistrationWithDetails.
+ *
+ * Expects RegistrationWithDetails[] (never plain Registration[]) so that
+ * effectiveRequiredAmount and paidAmount are always pre-computed by
+ * getAllRegistrationsWithDetails — the single source of truth.
+ */
 export const useSummaryCalculations = (registrations: RegistrationWithDetails[], product?: Product) => {
   const totalParticipants = registrations.length;
   const registrationsFilled = product ? (totalParticipants / (product.maxParticipants || 1)) * 100 : 0;
 
-  // effectiveRequiredAmount and paidAmount are both pre-computed by getAllRegistrationsWithDetails:
-  // - effectiveRequiredAmount = requiredAmount minus any approved discount
-  // - paidAmount              = sum of all payment docs (never stale)
+  // effectiveRequiredAmount = requiredAmount minus any approved discount (pre-computed).
+  // paidAmount              = sum of all payment documents (pre-computed, never stale).
   const totalExpected = registrations.reduce((sum, reg) => sum + reg.effectiveRequiredAmount, 0);
   const totalPaid     = registrations.reduce((sum, reg) => sum + reg.paidAmount, 0);
 
@@ -15,6 +21,6 @@ export const useSummaryCalculations = (registrations: RegistrationWithDetails[],
     totalParticipants,
     registrationsFilled,
     totalExpected,
-    totalPaid
+    totalPaid,
   };
 };

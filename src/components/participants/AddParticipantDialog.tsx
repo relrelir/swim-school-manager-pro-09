@@ -75,51 +75,29 @@ const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
               })} required />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">אימייל</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@gmail.com"
+                value={newParticipant.email ?? ''}
+                onChange={e => setNewParticipant({ ...newParticipant, email: e.target.value })}
+                dir="ltr"
+              />
+            </div>
             <div className="flex items-center space-x-2">
-              
-              
+
+
             </div>
             
             <div className="space-y-4 pt-4 border-t">
               <h3 className="font-semibold">פרטי תשלום</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="required-amount">מחיר מלא (₪)</Label>
                   <Input id="required-amount" type="number" value={registrationData.requiredAmount} className="bg-gray-100 ltr" readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="discount-amount">הנחה (₪)</Label>
-                  <Input
-                    id="discount-amount"
-                    type="number"
-                    value={registrationData.discountAmount ?? ''}
-                    onChange={e => {
-                      const discount = e.target.value ? Number(e.target.value) : null;
-                      setRegistrationData({
-                        ...registrationData,
-                        discountAmount: discount,
-                        discountApproved: discount != null && discount > 0,
-                      });
-                    }}
-                    min={0}
-                    max={registrationData.requiredAmount}
-                    className="ltr"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="effective-amount">סכום לתשלום (אחרי הנחה)</Label>
-                  <Input
-                    id="effective-amount"
-                    type="number"
-                    value={registrationData.requiredAmount - (registrationData.discountAmount || 0)}
-                    className="bg-gray-100 ltr"
-                    readOnly
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="paid-amount">סכום ששולם</Label>
@@ -137,6 +115,7 @@ const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
                   receiptNumber: e.target.value,
                 })} required />
               </div>
+              <p className="text-xs text-muted-foreground">ניתן להחיל הנחה לאחר הרישום</p>
             </div>
           </div>
           <DialogFooter className="mt-4">

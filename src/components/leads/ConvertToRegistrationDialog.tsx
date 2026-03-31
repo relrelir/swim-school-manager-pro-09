@@ -51,7 +51,7 @@ interface Props {
 }
 
 export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpenChange, onDone }: Props) {
-  const { addPayment, addHealthDeclaration } = useData();
+  const { addHealthDeclaration } = useData();
 
   /* ── registration state ── */
   const [seasonId, setSeasonId] = useState('');
@@ -205,6 +205,19 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
         createdAt: new Date().toISOString(),
       });
 
+      // Create initial Payment document inside the batch so all three writes
+      // (Participant, Registration, Payment) succeed or fail together.
+      if (paid > 0) {
+        const paymentRef = doc(collection(db, 'payments'));
+        batch.set(paymentRef, {
+          registrationId: registrationRef.id,
+          amount: paid,
+          paymentDate: new Date().toISOString().split('T')[0],
+          receiptNumber: receiptNumber.trim(),
+          createdAt: serverTimestamp(),
+        });
+      }
+
       // Update Lead
       const leadUpdate: Record<string, unknown> = { updatedAt: new Date().toISOString() };
       if (!alreadyConverted) {
@@ -213,26 +226,12 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
       }
       batch.update(doc(db, 'leads', lead.id), leadUpdate);
 
+      // Commit Participant + Registration + Payment + Lead update atomically.
       await batch.commit();
 
-      // Save initial payment via PaymentsProvider (optimistic update + consistent code path).
-      if (paid > 0) {
-        const savedPayment = await addPayment({
-          registrationId: registrationRef.id,
-          amount: paid,
-          receiptNumber: receiptNumber.trim(),
-          paymentDate: new Date().toISOString().split('T')[0],
-        });
-        if (!savedPayment) {
-          toast({
-            title: 'אזהרה',
-            description: 'הרישום נוצר אך התשלום הראשוני לא נשמר. יש להוסיפו ידנית.',
-            variant: 'destructive',
-          });
-        }
-      }
-
-      // Auto-create health declaration so the participant can sign digitally.
+      // Auto-create health declaration and immediately send via WhatsApp.
+      // This runs only after the batch has fully succeeded.
+      let healthSent = false;
       try {
         const healthDecl = await addHealthDeclaration({
           participantId,
@@ -247,17 +246,29 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
           sentAt: null,
         });
         if (healthDecl?.token) {
+          const healthFormUrl = `${window.location.origin}/health-form/${healthDecl.token}`;
           setHealthSendInfo({
             participantId,
             participantName: lead.name,
             phone: lead.phone,
-            healthFormUrl: `${window.location.origin}/health-form/${healthDecl.token}`,
+            email: lead.email ?? '',
+            healthFormUrl,
           });
+          // Auto-trigger WhatsApp — opens a pre-filled wa.me deep link in a new tab.
+          sendHealthDeclarationByWhatsApp(lead.name, lead.phone, healthFormUrl);
+          healthSent = true;
         }
       } catch (healthErr) {
         console.error('Error creating health declaration:', healthErr);
-        // Non-fatal — registration already succeeded
+        // Non-fatal — registration and payment already committed successfully.
       }
+
+      toast({
+        title: 'הרישום הושלם בהצלחה!',
+        description: healthSent
+          ? 'הרישום נוצר, התשלום נרשם והצהרת הבריאות נשלחה ב-WhatsApp.'
+          : 'הרישום נוצר והתשלום נרשם. הצהרת הבריאות לא נשלחה — ניתן לשלוח ידנית.',
+      });
 
       setDone(true);
       // NOTE: Do NOT call onDone() here.
@@ -305,7 +316,7 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
                   variant="outline"
                   className="w-full gap-2"
                   onClick={() => {
-                    sendHealthDeclarationByEmail(healthSendInfo.participantName, '', healthSendInfo.healthFormUrl);
+                    sendHealthDeclarationByEmail(healthSendInfo.participantName, healthSendInfo.email ?? '', healthSendInfo.healthFormUrl);
                     toast({ title: 'נפתח לקוח מייל' });
                   }}
                 >

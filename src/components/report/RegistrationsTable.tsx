@@ -1,5 +1,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { CheckCircle } from 'lucide-react';
 import { PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
 import { useData } from '@/context/DataContext';
 import TableRowActions from '@/components/participants/TableRowActions';
@@ -111,11 +113,20 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <HealthFormLink
-                          participantId={registration.participant.id}
-                          participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
-                          participantPhone={registration.participant.phone}
-                        />
+                        {registration.participant.healthApproval ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>אישור בריאות התקבל</TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <HealthFormLink
+                            participantId={registration.participant.id}
+                            participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
+                            participantPhone={registration.participant.phone}
+                          />
+                        )}
                         <TableRowActions
                           registration={registration}
                           hasPayments={(registration.payments?.length ?? 0) > 0}

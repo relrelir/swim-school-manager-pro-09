@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Payment } from '@/types';
 import { useData } from '@/context/DataContext';
 import { auth } from '@/config/firebase';
@@ -50,6 +50,17 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
   const [pwError, setPwError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Reset all dialog state whenever it's closed
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingId(null);
+      setPending(null);
+      setPassword('');
+      setPwError('');
+      setSaving(false);
+    }
+  }, [isOpen]);
+
   const total = payments.reduce((sum, p) => sum + p.amount, 0);
 
   // ── edit helpers ─────────────────────────────────────────────────────────────
@@ -90,6 +101,8 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
     if (!password) { setPwError('יש להזין סיסמה'); return; }
     setSaving(true);
     setPwError('');
+
+    // Step 1: verify admin password
     try {
       const currentUser = auth.currentUser;
       if (!currentUser?.email) throw new Error('no-user');
@@ -97,14 +110,6 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
         currentUser,
         EmailAuthProvider.credential(currentUser.email, password),
       );
-      if (pending?.type === 'edit') {
-        await updatePayment(pending.payment);
-        setEditingId(null);
-      } else if (pending?.type === 'delete') {
-        await deletePayment(pending.id);
-      }
-      setPending(null);
-      setPassword('');
     } catch (e: unknown) {
       const msg = (e as Error)?.message ?? '';
       setPwError(
@@ -112,7 +117,21 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
           ? 'סיסמה שגויה'
           : 'שגיאת אימות — נסה שנית',
       );
+      setSaving(false);
+      return;
+    }
+
+    // Step 2: perform the action (auth succeeded)
+    try {
+      if (pending?.type === 'edit') {
+        await updatePayment(pending.payment);
+        setEditingId(null);
+      } else if (pending?.type === 'delete') {
+        await deletePayment(pending.id);
+      }
     } finally {
+      setPending(null);
+      setPassword('');
       setSaving(false);
     }
   };

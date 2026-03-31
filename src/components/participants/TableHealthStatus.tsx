@@ -61,13 +61,15 @@ const TableHealthStatus: React.FC<TableHealthStatusProps> = ({
         </Tooltip>
       )}
 
-      {/* Send reminder button — opens WhatsApp/email dialog */}
-      <HealthFormLink
-        participantId={participantId}
-        participantName={`${participant.firstName} ${participant.lastName}`}
-        participantPhone={participant.phone}
-        isDisabled={!isAdmin()}
-      />
+      {/* Send reminder button — only shown when health approval is still pending */}
+      {!participant.healthApproval && (
+        <HealthFormLink
+          participantId={participantId}
+          participantName={`${participant.firstName} ${participant.lastName}`}
+          participantPhone={participant.phone}
+          isDisabled={!isAdmin()}
+        />
+      )}
     </div>
   );
 };

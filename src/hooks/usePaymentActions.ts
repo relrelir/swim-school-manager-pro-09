@@ -107,6 +107,7 @@ export const usePaymentActions = (dataContext: any) => {
           participantId: participant.id,
           participantName: `${participant.firstName} ${participant.lastName}`,
           phone: participant.phone,
+          email: participant.email,
           healthFormUrl: `${window.location.origin}/health-form/${healthDecl.token}`,
         };
       }
@@ -218,15 +219,15 @@ export const usePaymentActions = (dataContext: any) => {
     const reg = allRegistrations.find((r) => r.id === registrationId);
     if (!reg) return false;
 
-    const healthDecl = await getHealthDeclarationForRegistration(registrationId);
-    if (healthDecl) await deleteHealthDeclaration(healthDecl.id);
-
     await deleteRegistration(registrationId);
 
     const otherRegs = allRegistrations.filter(
       (r) => r.participantId === reg.participantId && r.id !== registrationId
     );
     if (otherRegs.length === 0) {
+      // Last registration for this participant — delete health declaration then participant
+      const healthDecl = await getHealthDeclarationForRegistration(reg.participantId);
+      if (healthDecl) await deleteHealthDeclaration(healthDecl.id);
       await deleteParticipant(reg.participantId);
     }
 
