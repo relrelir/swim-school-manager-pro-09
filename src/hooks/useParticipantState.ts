@@ -25,8 +25,6 @@ export const useParticipantState = (product?: Product) => {
   });
   const [registrationData, setRegistrationData] = useState({
     requiredAmount: product ? (product.effectivePrice ?? product.price) : 0,
-    paidAmount: 0,
-    receiptNumber: '',
     discountApproved: false,
     discountAmount: null as number | null
   });
@@ -56,8 +54,6 @@ export const useParticipantState = (product?: Product) => {
     });
     setRegistrationData({
       requiredAmount: product ? (product.effectivePrice ?? product.price) : 0,
-      paidAmount: 0,
-      receiptNumber: '',
       discountApproved: false,
       discountAmount: null as number | null,
     });

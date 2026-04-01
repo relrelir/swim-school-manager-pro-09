@@ -4,36 +4,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Participant } from '@/types';
+
 interface AddParticipantDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   newParticipant: Omit<Participant, 'id'>;
   setNewParticipant: React.Dispatch<React.SetStateAction<Omit<Participant, 'id'>>>;
-  registrationData: {
-    requiredAmount: number;
-    paidAmount: number;
-    receiptNumber: string;
-    discountApproved: boolean;
-    discountAmount?: number | null;
-  };
-  setRegistrationData: React.Dispatch<React.SetStateAction<{
-    requiredAmount: number;
-    paidAmount: number;
-    receiptNumber: string;
-    discountApproved: boolean;
-    discountAmount?: number | null;
-  }>>;
   onSubmit: (e: React.FormEvent) => void;
 }
+
 const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
   isOpen,
   onOpenChange,
   newParticipant,
   setNewParticipant,
-  registrationData,
-  setRegistrationData,
   onSubmit
 }) => {
   return <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -86,37 +71,6 @@ const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
                 dir="ltr"
               />
             </div>
-            <div className="flex items-center space-x-2">
-
-
-            </div>
-            
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold">פרטי תשלום</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="required-amount">מחיר מלא (₪)</Label>
-                  <Input id="required-amount" type="number" value={registrationData.requiredAmount} className="bg-gray-100 ltr" readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paid-amount">סכום ששולם</Label>
-                  <Input id="paid-amount" type="number" value={registrationData.paidAmount} onChange={e => setRegistrationData({
-                    ...registrationData,
-                    paidAmount: Number(e.target.value),
-                  })} required min={0} className="ltr" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receipt-number">מספר קבלה</Label>
-                <Input id="receipt-number" value={registrationData.receiptNumber} onChange={e => setRegistrationData({
-                  ...registrationData,
-                  receiptNumber: e.target.value,
-                })} required />
-              </div>
-              <p className="text-xs text-muted-foreground">ניתן להחיל הנחה לאחר הרישום</p>
-            </div>
           </div>
           <DialogFooter className="mt-4">
             <Button type="submit">רשום משתתף</Button>
@@ -125,4 +79,5 @@ const AddParticipantDialog: React.FC<AddParticipantDialogProps> = ({
       </DialogContent>
     </Dialog>;
 };
+
 export default AddParticipantDialog;
