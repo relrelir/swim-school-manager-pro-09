@@ -15,6 +15,7 @@ export interface HealthDeclarationSendInfo {
   participantId: string;
   participantName: string;
   phone: string;
+  email?: string;
   healthFormUrl: string;
 }
 
@@ -38,7 +39,7 @@ const SendHealthDeclarationDialog = ({
 
   const handleEmail = () => {
     if (!info.healthFormUrl) return;
-    sendHealthDeclarationByEmail(info.participantName, '', info.healthFormUrl);
+    sendHealthDeclarationByEmail(info.participantName, info.email ?? '', info.healthFormUrl);
     toast({ title: 'נפתח Gmail', description: 'שלחו את המייל המוכן לחתימה על הצהרת הבריאות' });
   };
 

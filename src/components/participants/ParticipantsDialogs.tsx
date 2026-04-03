@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Participant, Registration, RegistrationWithDetails, HealthDeclaration } from '@/types';
+import { Participant, RegistrationWithDetails, HealthDeclaration } from '@/types';
 import AddParticipantDialog from '@/components/participants/AddParticipantDialog';
 import AddPaymentDialog from '@/components/participants/AddPaymentDialog';
 import HealthDeclarationForm from '@/components/participants/HealthDeclarationForm';
@@ -14,33 +14,19 @@ interface ParticipantsDialogsProps {
   setIsHealthFormOpen: (open: boolean) => void;
   newParticipant: Omit<Participant, 'id'>;
   setNewParticipant: React.Dispatch<React.SetStateAction<Omit<Participant, 'id'>>>;
-  registrationData: {
-    requiredAmount: number;
-    paidAmount: number;
-    receiptNumber: string;
-    discountApproved: boolean;
-    discountAmount?: number | null;
-  };
-  setRegistrationData: React.Dispatch<React.SetStateAction<{
-    requiredAmount: number;
-    paidAmount: number;
-    receiptNumber: string;
-    discountApproved: boolean;
-    discountAmount?: number | null;
-  }>>;
   currentRegistration: RegistrationWithDetails | null;
   participants: Participant[];
   newPayment: {
     amount: number;
     receiptNumber: string;
     paymentDate: string;
-    registrationId?: string; // Add registrationId field
+    registrationId?: string;
   };
   setNewPayment: React.Dispatch<React.SetStateAction<{
     amount: number;
     receiptNumber: string;
     paymentDate: string;
-    registrationId?: string; // Add registrationId field
+    registrationId?: string;
   }>>;
   currentHealthDeclaration: {
     participantId: string;
@@ -56,7 +42,7 @@ interface ParticipantsDialogsProps {
   } | null>>;
   handleAddParticipant: (e: React.FormEvent) => void;
   handleAddPayment: (e: React.FormEvent) => void;
-  handleApplyDiscount: (amount: number, registrationId?: string) => void; // Update to accept registrationId
+  handleApplyDiscount: (amount: number, registrationId?: string) => void;
 }
 
 const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
@@ -68,8 +54,6 @@ const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
   setIsHealthFormOpen,
   newParticipant,
   setNewParticipant,
-  registrationData,
-  setRegistrationData,
   currentRegistration,
   participants,
   newPayment,
@@ -88,8 +72,6 @@ const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
         onOpenChange={setIsAddParticipantOpen}
         newParticipant={newParticipant}
         setNewParticipant={setNewParticipant}
-        registrationData={registrationData}
-        setRegistrationData={setRegistrationData}
         onSubmit={handleAddParticipant}
       />
 
@@ -114,10 +96,7 @@ const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
           participantName={currentHealthDeclaration.participantName}
           defaultPhone={currentHealthDeclaration.phone}
           healthDeclaration={currentHealthDeclaration.declaration}
-          afterSubmit={() => {
-            // Don't clear the health declaration immediately so user can copy the link
-            // if needed, but make sure the dialog can be closed
-          }}
+          afterSubmit={() => {}}
         />
       )}
     </>

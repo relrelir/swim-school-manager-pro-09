@@ -17,6 +17,16 @@ interface FormData {
 type FormErrors = Partial<Record<keyof FormData, string>>;
 const EMPTY: FormData = { name: '', idNumber: '', phone: '', email: '', requestedProductType: '', notes: '', marketingConsent: false };
 
+/* ─────────────── helpers ─────────────── */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms)
+    ),
+  ]);
+}
+
 /* ─────────────── constants ─────────────── */
 const PRODUCT_TYPES: ProductType[] = ['קורס', 'חוג', 'קייטנה'];
 const SCHOOL_NAME = 'ענבר במדבר - בית ספר לשחייה';
@@ -30,6 +40,7 @@ const LeadRegistrationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   const set = (field: keyof FormData) => (
@@ -37,6 +48,7 @@ const LeadRegistrationPage: React.FC = () => {
   ) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
     setErrors(prev => ({ ...prev, [field]: undefined }));
+    setSubmitError(null);
   };
 
   const validate = (): boolean => {
@@ -48,6 +60,7 @@ const LeadRegistrationPage: React.FC = () => {
     else if (!validateIsraeliPhone(form.phone)) e.phone = 'מספר טלפון אינו תקין';
     if (!form.email.trim()) e.email = 'שדה חובה';
     else if (!validateEmail(form.email)) e.email = 'כתובת אימייל אינה תקינה';
+    if (!form.marketingConsent) e.marketingConsent = 'יש לאשר קבלת עדכונים להמשך';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -56,8 +69,9 @@ const LeadRegistrationPage: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    setSubmitError(null);
     try {
-      await createLead({
+      await withTimeout(createLead({
         name: form.name.trim(),
         idNumber: form.idNumber.replace(/\D/g, '').padStart(9, '0'),
         phone: form.phone.trim(),
@@ -67,12 +81,16 @@ const LeadRegistrationPage: React.FC = () => {
         notes: form.notes.trim() || null,
         marketingConsent: form.marketingConsent,
         convertedToParticipantId: null,
-      });
+      }), 12000);
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
-      setErrors({ name: 'אירעה שגיאה בשליחת הטופס. אנא נסה שנית.' });
+      const msg = (err as Error).message === 'timeout'
+        ? 'הבקשה לקחה יותר מדי זמן. אנא בדוק את החיבור לאינטרנט ונסה שנית.'
+        : 'אירעה שגיאה בשליחת הטופס. אנא נסה שנית.';
+      setSubmitError(msg);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -180,7 +198,7 @@ const LeadRegistrationPage: React.FC = () => {
           <button
             onClick={scrollToForm}
             aria-label="עבור לטופס הרשמה"
-            className="bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold px-5 py-2 rounded-full text-sm shadow-lg transition-all hover:scale-105"
+            className="bg-gradient-to-r from-orange-300 to-pink-400 hover:from-orange-400 hover:to-pink-500 text-gray-900 font-bold px-5 py-2 rounded-full text-sm shadow-lg transition-all hover:scale-105"
           >
             הצטרפו אלינו
           </button>
@@ -238,7 +256,7 @@ const LeadRegistrationPage: React.FC = () => {
           </div>
 
           <div className="relative z-10 px-6 max-w-4xl mx-auto pt-24 pb-32">
-            <div className="inline-block bg-amber-400/20 border border-amber-400/40 text-amber-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+            <div className="inline-block bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
               ✨ עונת 2026 — מקומות אחרונים!
             </div>
             <h1
@@ -248,7 +266,7 @@ const LeadRegistrationPage: React.FC = () => {
             >
               לשחות כמו דגים במים
               <br />
-              <span className="text-amber-400">עם ענבר במדבר!</span>
+              <span className="text-cyan-300">עם ענבר במדבר!</span>
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
               בית הספר המוביל לשחייה מזמין אתכם להצטרף אלינו.
@@ -256,8 +274,8 @@ const LeadRegistrationPage: React.FC = () => {
             <button
               onClick={scrollToForm}
               aria-label="עבור לטופס הרשמה"
-              className="inline-flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-gray-900 font-extrabold text-xl px-10 py-5 rounded-full shadow-2xl transition-all hover:scale-105 hover:shadow-amber-400/40"
-              style={{ boxShadow: '0 8px 32px rgba(251,191,36,0.5)' }}
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-300 to-pink-400 hover:from-orange-400 hover:to-pink-500 text-gray-900 font-extrabold text-xl px-10 py-5 rounded-full shadow-2xl transition-all hover:scale-105"
+              style={{ boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }}
             >
               <span>הצטרפו אלינו!</span>
               <span aria-hidden="true" className="text-2xl">🌊</span>
@@ -277,8 +295,8 @@ const LeadRegistrationPage: React.FC = () => {
               {[
                 {
                   icon: <Award aria-hidden="true" className="w-8 h-8" />,
-                  color: 'from-amber-400 to-orange-500',
-                  bg: 'bg-amber-50',
+                  color: 'from-cyan-400 to-teal-500',
+                  bg: 'bg-cyan-50',
                   title: 'מדריכים מוסמכים',
                   desc: 'צוות מקצועי עם ניסיון רב בהוראת שחייה',
                 },
@@ -375,7 +393,7 @@ const LeadRegistrationPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="field-name" className="block text-white text-sm font-semibold mb-1.5">
-                    שם מלא <span className="text-amber-400" aria-hidden="true">*</span>
+                    שם מלא <span className="text-cyan-300" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="field-name"
@@ -392,7 +410,7 @@ const LeadRegistrationPage: React.FC = () => {
                 </div>
                 <div>
                   <label htmlFor="field-id" className="block text-white text-sm font-semibold mb-1.5">
-                    תעודת זהות <span className="text-amber-400" aria-hidden="true">*</span>
+                    תעודת זהות <span className="text-cyan-300" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="field-id"
@@ -416,7 +434,7 @@ const LeadRegistrationPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="field-phone" className="block text-white text-sm font-semibold mb-1.5">
-                    טלפון נייד <span className="text-amber-400" aria-hidden="true">*</span>
+                    טלפון נייד <span className="text-cyan-300" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="field-phone"
@@ -434,7 +452,7 @@ const LeadRegistrationPage: React.FC = () => {
                 </div>
                 <div>
                   <label htmlFor="field-email" className="block text-white text-sm font-semibold mb-1.5">
-                    אימייל <span className="text-amber-400" aria-hidden="true">*</span>
+                    אימייל <span className="text-cyan-300" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="field-email"
@@ -483,27 +501,43 @@ const LeadRegistrationPage: React.FC = () => {
               </div>
 
               {/* Marketing consent */}
-              <div className="mb-5 flex items-start gap-3">
-                <input
-                  id="field-marketing"
-                  type="checkbox"
-                  checked={form.marketingConsent}
-                  onChange={e => setForm(prev => ({ ...prev, marketingConsent: e.target.checked }))}
-                  className="mt-1 w-4 h-4 rounded cursor-pointer flex-shrink-0 accent-amber-400"
-                />
-                <label htmlFor="field-marketing" className="text-blue-200 text-sm leading-relaxed cursor-pointer">
-                  אני מסכים/ה לקבל עדכונים, מבצעים ומידע על תוכניות השחייה מ-ענבר במדבר
-                  <span className="text-blue-400"> (ניתן לבטל בכל עת)</span>
-                </label>
+              <div className="mb-5">
+                <div className="flex items-start gap-3">
+                  <input
+                    id="field-marketing"
+                    type="checkbox"
+                    checked={form.marketingConsent}
+                    onChange={e => {
+                      setForm(prev => ({ ...prev, marketingConsent: e.target.checked }));
+                      setErrors(prev => ({ ...prev, marketingConsent: undefined }));
+                      setSubmitError(null);
+                    }}
+                    className="mt-1 w-4 h-4 rounded cursor-pointer flex-shrink-0 accent-cyan-400"
+                  />
+                  <label htmlFor="field-marketing" className="text-blue-200 text-sm leading-relaxed cursor-pointer">
+                    אני מסכים/ה לקבל עדכונים, מבצעים ומידע על תוכניות השחייה מ-ענבר במדבר
+                    <span className="text-red-400 mr-1">*</span>
+                  </label>
+                </div>
+                {errors.marketingConsent && (
+                  <p className="text-red-400 text-xs mt-1 mr-7">{errors.marketingConsent}</p>
+                )}
               </div>
+
+              {/* Submit error banner */}
+              {submitError && (
+                <div className="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-400 text-red-200 text-sm text-center">
+                  {submitError}
+                </div>
+              )}
 
               {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}
-                className="swimmer-btn w-full bg-amber-400 hover:bg-amber-300 disabled:bg-amber-600 text-gray-900 font-extrabold text-xl py-4 rounded-2xl shadow-2xl transition-all hover:scale-[1.02] disabled:cursor-not-allowed"
-                style={{ boxShadow: '0 8px 32px rgba(251,191,36,0.5)' }}
+                className="swimmer-btn w-full bg-gradient-to-r from-orange-300 to-pink-400 hover:from-orange-400 hover:to-pink-500 disabled:from-gray-400 disabled:to-gray-500 text-gray-900 font-extrabold text-xl py-4 rounded-2xl shadow-2xl transition-all hover:scale-[1.02] disabled:cursor-not-allowed"
+                style={{ boxShadow: '0 8px 32px rgba(249,115,22,0.35)' }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -522,7 +556,7 @@ const LeadRegistrationPage: React.FC = () => {
               </button>
 
               <p className="text-blue-200 text-xs text-center mt-4">
-                שדות המסומנים ב-<span className="text-amber-400 font-bold" aria-hidden="true">*</span>
+                שדות המסומנים ב-<span className="text-cyan-300 font-bold" aria-hidden="true">*</span>
                 <span className="sr-only">כוכבית</span> הינם חובה.{' '}
                 פרטיך מאובטחים ולא יועברו לצד שלישי.{' '}
                 <a href="/privacy-policy" className="underline hover:text-white transition-colors">

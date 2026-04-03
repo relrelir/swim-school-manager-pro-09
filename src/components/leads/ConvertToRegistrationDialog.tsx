@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/config/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,15 +49,13 @@ interface Props {
 }
 
 export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpenChange, onDone }: Props) {
-  const { addPayment, addHealthDeclaration } = useData();
+  const { addParticipant, addRegistration, updateLead, addHealthDeclaration, participants } = useData();
 
   /* ── registration state ── */
   const [seasonId, setSeasonId] = useState('');
   const [poolId, setPoolId] = useState('');
   const [productId, setProductId] = useState('');
   const [allSeasonProducts, setAllSeasonProducts] = useState<Product[]>([]);
-  const [receiptNumber, setReceiptNumber] = useState('');
-  const [paidAmount, setPaidAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
@@ -120,7 +116,7 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
   /* ── reset ── */
   const reset = () => {
     setSeasonId(''); setPoolId(''); setProductId('');
-    setAllSeasonProducts([]); setReceiptNumber(''); setPaidAmount('');
+    setAllSeasonProducts([]);
     setError(''); setDone(false); setHealthSendInfo(null); setLinkCopied(false);
     setShowAddProduct(false);
     setNewProduct(makeEmptyProduct('', ''));
@@ -156,83 +152,57 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
   /* ── confirm registration ── */
   const handleConfirm = async () => {
     if (!productId) { setError('יש לבחור מוצר'); return; }
-    if (!receiptNumber.trim()) { setError('יש להזין מספר קבלה'); return; }
-    const paid = parseFloat(paidAmount);
-    if (paidAmount.trim() === '' || isNaN(paid) || paid < 0) {
-      setError('יש להזין סכום ששולם (0 אם לא שולם)');
-      return;
-    }
     if (!selectedProduct) return;
 
     setLoading(true);
     setError('');
     try {
-      const batch = writeBatch(db);
-      const alreadyConverted = !!lead.convertedToParticipantId;
+      // Create or reuse participant via context (same path as manual registration)
+      const existingParticipant = lead.convertedToParticipantId
+        ? participants.find(p => p.id === lead.convertedToParticipantId)
+        : undefined;
 
       let participantId: string;
 
-      if (alreadyConverted) {
-        // Lead was already converted — reuse the existing participant
-        participantId = lead.convertedToParticipantId!;
+      if (existingParticipant) {
+        participantId = existingParticipant.id;
       } else {
-        // First conversion — create a new Participant
         const [firstName, ...rest] = lead.name.trim().split(' ');
         const lastName = rest.join(' ') || firstName;
-        const participantRef = doc(collection(db, 'participants'));
-        batch.set(participantRef, {
+        const participant = await addParticipant({
           firstName,
           lastName,
           idNumber: lead.idNumber,
           phone: lead.phone,
           healthApproval: false,
-          createdAt: new Date().toISOString(),
         });
-        participantId = participantRef.id;
+        if (!participant) throw new Error('Failed to create participant');
+        participantId = participant.id;
       }
 
-      // Create Registration (always)
-      const registrationRef = doc(collection(db, 'registrations'));
-      batch.set(registrationRef, {
+      // Create Registration via context
+      const registration = await addRegistration({
         participantId,
         productId,
         registrationDate: new Date().toISOString().split('T')[0],
         requiredAmount: selectedProduct.effectivePrice ?? selectedProduct.price,
-        paidAmount: paid,
-        receiptNumber: receiptNumber.trim(),
+        paidAmount: 0,
+        receiptNumber: null,
         discountAmount: null,
         discountApproved: false,
-        createdAt: new Date().toISOString(),
+      });
+      if (!registration) throw new Error('Failed to create registration');
+
+      // Update Lead via context
+      await updateLead({
+        ...lead,
+        status: 'רשום',
+        convertedToParticipantId: participantId,
       });
 
-      // Update Lead
-      const leadUpdate: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-      if (!alreadyConverted) {
-        leadUpdate.status = 'רשום';
-        leadUpdate.convertedToParticipantId = participantId;
-      }
-      batch.update(doc(db, 'leads', lead.id), leadUpdate);
-
-      await batch.commit();
-
-      // Save initial payment via PaymentsProvider (optimistic update + consistent code path).
-      if (paid > 0) {
-        const savedPayment = await addPayment({
-          registrationId: registrationRef.id,
-          amount: paid,
-          receiptNumber: receiptNumber.trim(),
-          paymentDate: new Date().toISOString().split('T')[0],
-        });
-        if (!savedPayment) {
-          toast({
-            title: 'אזהרה',
-            description: 'הרישום נוצר אך התשלום הראשוני לא נשמר. יש להוסיפו ידנית.',
-            variant: 'destructive',
-          });
-        }
-      }
-
-      // Auto-create health declaration so the participant can sign digitally.
+      // Auto-create health declaration and immediately send via WhatsApp.
+      // This runs only after the batch has fully succeeded.
+      let healthSent = false;
       try {
         const healthDecl = await addHealthDeclaration({
           participantId,
@@ -247,17 +217,29 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
           sentAt: null,
         });
         if (healthDecl?.token) {
+          const healthFormUrl = `${window.location.origin}/health-form/${healthDecl.token}`;
           setHealthSendInfo({
             participantId,
             participantName: lead.name,
             phone: lead.phone,
-            healthFormUrl: `${window.location.origin}/health-form/${healthDecl.token}`,
+            email: lead.email ?? '',
+            healthFormUrl,
           });
+          // Auto-trigger WhatsApp — opens a pre-filled wa.me deep link in a new tab.
+          sendHealthDeclarationByWhatsApp(lead.name, lead.phone, healthFormUrl);
+          healthSent = true;
         }
       } catch (healthErr) {
         console.error('Error creating health declaration:', healthErr);
-        // Non-fatal — registration already succeeded
+        // Non-fatal — registration and payment already committed successfully.
       }
+
+      toast({
+        title: 'הרישום הושלם בהצלחה!',
+        description: healthSent
+          ? 'הרישום נוצר והצהרת הבריאות נשלחה ב-WhatsApp.'
+          : 'הרישום נוצר. הצהרת הבריאות לא נשלחה — ניתן לשלוח ידנית.',
+      });
 
       setDone(true);
       // NOTE: Do NOT call onDone() here.
@@ -305,7 +287,7 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
                   variant="outline"
                   className="w-full gap-2"
                   onClick={() => {
-                    sendHealthDeclarationByEmail(healthSendInfo.participantName, '', healthSendInfo.healthFormUrl);
+                    sendHealthDeclarationByEmail(healthSendInfo.participantName, healthSendInfo.email ?? '', healthSendInfo.healthFormUrl);
                     toast({ title: 'נפתח לקוח מייל' });
                   }}
                 >
@@ -485,36 +467,6 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
               {selectedProduct.daysOfWeek?.length ? (
                 <p><span className="text-muted-foreground">ימים: </span>{selectedProduct.daysOfWeek.join(', ')}</p>
               ) : null}
-            </div>
-          )}
-
-          {/* Receipt + Paid amount */}
-          {!showAddProduct && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="receipt">מספר קבלה *</Label>
-                <Input
-                  id="receipt"
-                  value={receiptNumber}
-                  onChange={e => { setReceiptNumber(e.target.value); setError(''); }}
-                  placeholder="מספר קבלה"
-                  dir="ltr"
-                  className="text-right"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="paidAmount">סכום ששולם (₪) *</Label>
-                <Input
-                  id="paidAmount"
-                  type="number"
-                  min="0"
-                  value={paidAmount}
-                  onChange={e => { setPaidAmount(e.target.value); setError(''); }}
-                  placeholder="0"
-                  dir="ltr"
-                  className="text-right"
-                />
-              </div>
             </div>
           )}
 

@@ -9,6 +9,7 @@ import { HealthDeclarationsProvider, useHealthDeclarationsContext } from './data
 import { LeadsProvider, useLeadsContext } from './data/LeadsProvider';
 import { CombinedDataContextType } from './data/types';
 import { Product } from '@/types';
+import { calcRegistrationFinancials } from '@/utils/financialCalculations';
 
 const DataContext = React.createContext<CombinedDataContextType | null>(null);
 
@@ -52,18 +53,11 @@ const DataConsumer: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
         const registrationPayments = payments.filter((p) => p.registrationId === registration.id);
 
-        // Compute paidAmount from actual payment documents — the payments collection is
-        // the authoritative source. The stored registration.paidAmount may be stale if a
-        // previous updateRegistration call failed silently.
-        const actualPaidAmount = registrationPayments.reduce((sum, p) => sum + p.amount, 0);
-
-        // effectiveRequiredAmount: requiredAmount minus any approved discount.
-        // Computed here ONCE so every consumer (table, summary cards, export, PDF) reads
-        // the same value and never duplicates the discount formula.
-        const disc = registration.discountApproved && registration.discountAmount
-          ? registration.discountAmount
-          : 0;
-        const effectiveRequiredAmount = Math.max(0, registration.requiredAmount - disc);
+        // Single source of truth: all financial math goes through calcRegistrationFinancials.
+        // It handles approved discounts, payment-doc aggregation, and the legacy fallback
+        // (registration.paidAmount) for records that predate the payment-document system.
+        const { effectiveRequired: effectiveRequiredAmount, totalPaid: actualPaidAmount } =
+          calcRegistrationFinancials(registration, registrationPayments);
 
         const paymentStatus = registrationsContext.calculatePaymentStatus({
           ...registration,

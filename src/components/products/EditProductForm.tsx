@@ -51,10 +51,6 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         onStartTimeChange={(value) => handleChange('startTime', value)}
         onDaysOfWeekChange={(value) => handleChange('daysOfWeek', value)}
         onPriceChange={(value) => handleChange('price', value)}
-        onDiscountAmountChange={(value) => {
-          handleChange('discountAmount', value);
-          handleChange('effectivePrice', value ? editingProduct.price - value : editingProduct.price);
-        }}
         onMaxParticipantsChange={(value) => handleChange('maxParticipants', value)}
         onNotesChange={(value) => handleChange('notes', value)}
       />

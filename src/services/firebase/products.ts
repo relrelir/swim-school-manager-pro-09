@@ -67,7 +67,8 @@ export async function createProduct(data: Omit<Product, 'id'>): Promise<Product>
 }
 
 export async function updateProduct(id: string, data: Partial<Omit<Product, 'id'>>): Promise<void> {
-  await updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() });
+  const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+  await updateDoc(doc(db, COL, id), { ...clean, updatedAt: serverTimestamp() });
 }
 
 export async function deleteProduct(id: string): Promise<void> {

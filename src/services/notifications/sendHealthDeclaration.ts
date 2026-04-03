@@ -26,11 +26,18 @@ export function sendHealthDeclarationByEmail(
 ): void {
   const subject = encodeURIComponent(`הצהרת בריאות — ${participantName}`);
   const body = encodeURIComponent(
-    `שלום,\n\nאנא מלאו את הצהרת הבריאות לפני תחילת הפעילות:\n${healthFormUrl}\n\nתודה`
+    `שלום ${participantName},\n\nאנא מלאו את הצהרת הבריאות לפני תחילת הפעילות:\n${healthFormUrl}\n\nתודה`
   );
   const to = email ? encodeURIComponent(email) : '';
   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1${to ? `&to=${to}` : ''}&su=${subject}&body=${body}`;
-  window.open(gmailUrl, '_blank');
+  // Use anchor click instead of window.open to avoid popup blockers falling back to mailto:/Outlook
+  const a = document.createElement('a');
+  a.href = gmailUrl;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 export function copyHealthDeclarationLink(healthFormUrl: string): Promise<boolean> {

@@ -41,13 +41,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   const stats = useMemo(() => {
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    // Use pre-computed effectiveRequiredAmount from RegistrationWithDetails — single source of truth
-    // that already accounts for approved discounts and is kept in sync with payment docs.
-    const totalRequired = getAllRegistrationsWithDetails().reduce(
-      (sum, r) => sum + r.effectiveRequiredAmount,
-      0
-    );
+    // Both totals are derived from the same set of registrations so that
+    // totalRequired and totalPaid are always comparable (same scope, same data).
+    const regsWithDetails = getAllRegistrationsWithDetails();
+    const totalRequired = regsWithDetails.reduce((sum, r) => sum + r.effectiveRequiredAmount, 0);
+    const totalPaid     = regsWithDetails.reduce((sum, r) => sum + r.paidAmount, 0);
     const healthApproved = participants.filter((p) => p.healthApproval).length;
     const newLeads = leads.filter((l) => l.status === 'חדש').length;
 
@@ -68,8 +66,8 @@ export default function DashboardPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
-    return { totalPaid, totalRequired, healthApproved, newLeads, byType, occupancy };
-  }, [registrations, products, participants, payments, leads]);
+    return { totalPaid, totalRequired, healthApproved, newLeads, byType, occupancy, registrationsCount: regsWithDetails.length };
+  }, [registrations, products, participants, payments, leads, getAllRegistrationsWithDetails]);
 
   const pieData = Object.entries(stats.byType)
     .filter(([, v]) => v > 0)
@@ -81,7 +79,7 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard title="רישומים" value={registrations.length} icon={BookOpen} />
+        <StatCard title="רישומים" value={stats.registrationsCount} icon={BookOpen} />
         <StatCard title="משתתפים" value={participants.length} icon={Users} />
         <StatCard title="לידים חדשים" value={stats.newLeads} icon={UserPlus} color="text-blue-600" />
         <StatCard

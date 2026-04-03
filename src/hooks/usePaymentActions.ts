@@ -38,8 +38,6 @@ export const usePaymentActions = (dataContext: any) => {
     participantData: Omit<Participant, 'id'>,
     registrationData: {
       requiredAmount: number;
-      paidAmount: number;
-      receiptNumber: string;
       discountApproved: boolean;
       discountAmount?: number | null;
     }
@@ -48,11 +46,6 @@ export const usePaymentActions = (dataContext: any) => {
     registration: Registration;
     healthSendInfo: HealthDeclarationSendInfo | null;
   } | null> => {
-    if (registrationData.paidAmount > 0 && !registrationData.receiptNumber) {
-      toast({ title: 'שגיאה', description: 'מספר קבלה הוא שדה חובה', variant: 'destructive' });
-      return null;
-    }
-
     const participant = await addParticipant(participantData);
     if (!participant) return null;
 
@@ -60,32 +53,13 @@ export const usePaymentActions = (dataContext: any) => {
       participantId: participant.id,
       productId,
       requiredAmount: registrationData.requiredAmount,
-      paidAmount: registrationData.paidAmount,
-      receiptNumber: registrationData.receiptNumber || null,
+      paidAmount: 0,
+      receiptNumber: null,
       discountApproved: registrationData.discountApproved,
       discountAmount: registrationData.discountAmount ?? null,
       registrationDate: new Date().toISOString().split('T')[0],
     });
     if (!registration) return null;
-
-    if (registrationData.paidAmount > 0) {
-      const savedPayment = await addPayment({
-        registrationId: registration.id,
-        amount: registrationData.paidAmount,
-        receiptNumber: registrationData.receiptNumber,
-        paymentDate: new Date().toISOString().split('T')[0],
-      });
-      // If the initial payment failed (savedPayment === undefined), the registration
-      // was already created so we don't roll it back — but we warn the user so they
-      // can re-add the payment manually.
-      if (!savedPayment) {
-        toast({
-          title: 'אזהרה',
-          description: 'הרישום נוצר אך התשלום הראשוני לא נשמר. יש להוסיפו ידנית.',
-          variant: 'destructive',
-        });
-      }
-    }
 
     // Auto-create health declaration and prepare send info
     let healthSendInfo: HealthDeclarationSendInfo | null = null;
@@ -107,6 +81,7 @@ export const usePaymentActions = (dataContext: any) => {
           participantId: participant.id,
           participantName: `${participant.firstName} ${participant.lastName}`,
           phone: participant.phone,
+          email: participant.email,
           healthFormUrl: `${window.location.origin}/health-form/${healthDecl.token}`,
         };
       }
@@ -218,15 +193,15 @@ export const usePaymentActions = (dataContext: any) => {
     const reg = allRegistrations.find((r) => r.id === registrationId);
     if (!reg) return false;
 
-    const healthDecl = await getHealthDeclarationForRegistration(registrationId);
-    if (healthDecl) await deleteHealthDeclaration(healthDecl.id);
-
     await deleteRegistration(registrationId);
 
     const otherRegs = allRegistrations.filter(
       (r) => r.participantId === reg.participantId && r.id !== registrationId
     );
     if (otherRegs.length === 0) {
+      // Last registration for this participant — delete health declaration then participant
+      const healthDecl = await getHealthDeclarationForRegistration(reg.participantId);
+      if (healthDecl) await deleteHealthDeclaration(healthDecl.id);
       await deleteParticipant(reg.participantId);
     }
 

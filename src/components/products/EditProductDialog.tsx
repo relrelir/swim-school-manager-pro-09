@@ -90,8 +90,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         maxParticipants: editingProduct.maxParticipants,
         notes: editingProduct.notes,
         endDate: calculatedEndDate || editingProduct.endDate,
-        discountAmount: editingProduct.discountAmount,
-        effectivePrice: editingProduct.effectivePrice,
         active: editingProduct.active, // Include active field
         poolId: editingProduct.poolId || currentPool?.id // Include poolId
       };

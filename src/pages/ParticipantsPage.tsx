@@ -30,8 +30,6 @@ const ParticipantsPage: React.FC = () => {
     setNewParticipant,
     currentRegistration,
     setCurrentRegistration,
-    registrationData,
-    setRegistrationData,
     newPayment,
     setNewPayment,
     totalParticipants,
@@ -209,8 +207,6 @@ const ParticipantsPage: React.FC = () => {
         setIsHealthFormOpen={setIsLinkDialogOpen}
         newParticipant={newParticipant}
         setNewParticipant={setNewParticipant}
-        registrationData={registrationData}
-        setRegistrationData={setRegistrationData}
         currentRegistration={currentRegistration}
         participants={participants}
         newPayment={newPayment}
