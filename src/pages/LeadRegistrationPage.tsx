@@ -280,7 +280,7 @@ const LeadRegistrationPage: React.FC = () => {
               <span>הצטרפו אלינו!</span>
               <span aria-hidden="true" className="text-2xl">🌊</span>
             </button>
-            <p className="mt-4 text-blue-300 text-sm">ללא עלות — נחזור אליכם תוך 24 שעות</p>
+            <p className="mt-4 text-blue-300 text-sm">ללא עלות — נחזור אליכם בהקדם</p>
           </div>
         </section>
 

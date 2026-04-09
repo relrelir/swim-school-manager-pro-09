@@ -105,31 +105,78 @@ export const exportRegistrationsToCSV = (registrations: RegistrationWithDetails[
   downloadCSV(processedRegistrations, columns, filename);
 };
 
-// Function to export daily activities to CSV
+// Function to export daily activities to CSV — hierarchical layout:
+// Activity header row → participant rows → blank line → next activity → ...
 export const exportDailyActivitiesToCSV = (activities: any[], filename: string = 'daily-activities.csv') => {
-  // Process activities to include the correct day of week and meeting number info
-  const processedActivities = activities.map(activity => {
-    // The meeting info is already calculated in the UI
+  const bom = '\uFEFF';
+
+  const q = (val: any) => {
+    if (val === undefined || val === null || val === '') return '""';
+    return `"${String(val).replace(/"/g, '""')}"`;
+  };
+
+  const lines: string[] = [];
+
+  activities.forEach((activity, idx) => {
     const currentMeeting = activity.currentMeeting || '';
     const totalMeetings = activity.totalMeetings || '';
-    
-    // Format meeting number in Hebrew format "X מתוך Y"
-    const meetingNumberText = `${currentMeeting} מתוך ${totalMeetings}`;
-    
-    return {
-      ...activity,
-      meetingNumber: meetingNumberText
-    };
+    const meetingText = `${currentMeeting} מתוך ${totalMeetings}`;
+    const participants: any[] = activity.participants || [];
+
+    // ── Activity header row ──────────────────────────────────────────────
+    lines.push([
+      q('פעילות'),
+      q(activity.product?.name ?? ''),
+      q(activity.product?.type ?? ''),
+      q(activity.startTime ?? ''),
+      q(activity.formattedDayOfWeek ?? ''),
+      q(meetingText),
+      q(`${participants.length} משתתפים`),
+    ].join(','));
+
+    if (participants.length === 0) {
+      lines.push([q(''), q('אין משתתפים רשומים')].join(','));
+    } else {
+      // Sub-header for participants
+      lines.push([
+        q(''),
+        q('#'),
+        q('שם פרטי'),
+        q('שם משפחה'),
+        q('ת.ז'),
+        q('טלפון'),
+        q('מייל'),
+        q('אישור בריאות'),
+      ].join(','));
+
+      participants.forEach((p: any, pIdx: number) => {
+        lines.push([
+          q(''),
+          q(pIdx + 1),
+          q(p.firstName ?? ''),
+          q(p.lastName ?? ''),
+          q(p.idNumber ?? ''),
+          q(p.phone ?? ''),
+          q(p.email ?? ''),
+          q(p.healthApproval ? 'כן' : 'לא'),
+        ].join(','));
+      });
+    }
+
+    // Blank separator between activities (not after the last one)
+    if (idx < activities.length - 1) {
+      lines.push('');
+    }
   });
 
-  const columns = [
-    { key: 'product.name', header: 'שם פעילות' },
-    { key: 'product.type', header: 'סוג פעילות' },
-    { key: 'startTime', header: 'שעת התחלה' },
-    { key: 'formattedDayOfWeek', header: 'יום בשבוע' }, 
-    { key: 'meetingNumber', header: 'מפגש מספר' }, 
-    { key: 'numParticipants', header: 'מספר משתתפים' },
-  ];
-  
-  downloadCSV(processedActivities, columns, filename);
+  const csv = bom + lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };

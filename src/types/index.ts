@@ -120,6 +120,7 @@ export interface DailyActivity {
   numParticipants: number;
   currentMeetingNumber: number;
   totalMeetings: number;
+  participants: Pick<Participant, 'id' | 'firstName' | 'lastName' | 'phone' | 'idNumber' | 'email' | 'healthApproval'>[];
 }
 
 // Leads module
