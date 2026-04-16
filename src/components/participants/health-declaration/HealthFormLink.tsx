@@ -11,6 +11,7 @@ import SendHealthDeclarationDialog, {
 interface HealthFormLinkProps {
   participantId: string;
   participantName?: string;
+  participantIdNumber?: string;
   participantPhone?: string;
   isDisabled?: boolean;
   className?: string;
@@ -19,6 +20,7 @@ interface HealthFormLinkProps {
 const HealthFormLink = ({
   participantId,
   participantName = '',
+  participantIdNumber = '',
   participantPhone = '',
   isDisabled,
   className,
@@ -41,7 +43,11 @@ const HealthFormLink = ({
     setIsGenerating(true);
     try {
       // createHealthDeclarationLink resets existing token or creates new one
-      const path = await createHealthDeclarationLink(participantId);
+      const path = await createHealthDeclarationLink(participantId, {
+        name: participantName,
+        idNumber: participantIdNumber,
+        phone: participantPhone,
+      });
       if (path) {
         const fullUrl = `${window.location.origin}${path}`;
         setSendInfo({

@@ -60,9 +60,12 @@ export const HealthDeclarationsProvider: React.FC<{ children: React.ReactNode }>
     }
   };
 
-  const createHealthDeclarationLink = async (participantId: string): Promise<string | undefined> => {
+  const createHealthDeclarationLink = async (
+    participantId: string,
+    participantData?: { name: string; idNumber: string; phone: string }
+  ): Promise<string | undefined> => {
     try {
-      const declaration = await hdService.createHealthDeclarationLink(participantId);
+      const declaration = await hdService.createHealthDeclarationLink(participantId, participantData);
       return `/health-form/${declaration.token}`;
     } catch (err) {
       console.error('Error creating health declaration link:', err);

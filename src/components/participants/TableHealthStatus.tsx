@@ -66,6 +66,7 @@ const TableHealthStatus: React.FC<TableHealthStatusProps> = ({
         <HealthFormLink
           participantId={participantId}
           participantName={`${participant.firstName} ${participant.lastName}`}
+          participantIdNumber={participant.idNumber}
           participantPhone={participant.phone}
           isDisabled={!isAdmin()}
         />

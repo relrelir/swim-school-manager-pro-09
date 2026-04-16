@@ -95,6 +95,11 @@ export interface HealthDeclaration {
   parentId?: string | null;
   createdAt?: string;
   sentAt?: string | null;
+  // Cached display data — stored when the link is created so the public form
+  // can render without querying /participants (which requires authentication).
+  participantName?: string | null;
+  participantIdNumber?: string | null;
+  participantPhone?: string | null;
 }
 
 export interface RegistrationWithDetails extends Registration {

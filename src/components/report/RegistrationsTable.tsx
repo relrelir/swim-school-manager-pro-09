@@ -129,6 +129,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                           <HealthFormLink
                             participantId={registration.participant.id}
                             participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
+                            participantIdNumber={registration.participant.idNumber}
                             participantPhone={registration.participant.phone}
                           />
                         )}
