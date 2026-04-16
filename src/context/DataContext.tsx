@@ -8,7 +8,7 @@ import { PaymentsProvider, usePaymentsContext } from './data/PaymentsProvider';
 import { HealthDeclarationsProvider, useHealthDeclarationsContext } from './data/HealthDeclarationsProvider';
 import { LeadsProvider, useLeadsContext } from './data/LeadsProvider';
 import { CombinedDataContextType } from './data/types';
-import { Product } from '@/types';
+import { Product, Participant } from '@/types';
 import { calcRegistrationFinancials } from '@/utils/financialCalculations';
 
 const DataContext = React.createContext<CombinedDataContextType | null>(null);
@@ -127,12 +127,24 @@ const DataConsumer: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     return activeProducts.map((product) => {
       const productRegistrations = registrationsContext.getRegistrationsByProduct(product.id);
       const progress = calculateMeetingProgress(product);
+      const productParticipants = productRegistrations
+        .map(reg => participantsContext.participants.find(p => p.id === reg.participantId))
+        .filter(Boolean) as Participant[];
       return {
         product,
         startTime: product.startTime ?? '',
         numParticipants: productRegistrations.length,
         currentMeetingNumber: progress.current,
         totalMeetings: progress.total,
+        participants: productParticipants.map(p => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          phone: p.phone,
+          idNumber: p.idNumber,
+          email: p.email,
+          healthApproval: p.healthApproval,
+        })),
       };
     });
   };

@@ -64,7 +64,7 @@ service cloud.firestore {
     //   and field sizes are within limits (prevents DoS via huge signatures)
     // - Only admins can delete
     match /healthDeclarations/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || resource.data.token is string;
 
       allow create: if isAuthenticated();
 

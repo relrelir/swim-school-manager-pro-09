@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle } from 'lucide-react';
-import { PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
+import { CheckCircle, Pencil } from 'lucide-react';
+import { Participant, PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
 import { useData } from '@/context/DataContext';
 import TableRowActions from '@/components/participants/TableRowActions';
 import HealthFormLink from '@/components/participants/health-declaration/HealthFormLink';
+import EditParticipantDialog from '@/components/participants/EditParticipantDialog';
 
 interface RegistrationsTableProps {
   registrations: RegistrationWithDetails[];
@@ -18,8 +20,11 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
   onDeleteRegistration,
 }) => {
   const {
-    calculateMeetingProgress
+    calculateMeetingProgress,
+    updateParticipant,
   } = useData();
+
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
 
   // Calculate payment status class
   const getStatusClassName = (status: PaymentStatus): string => {
@@ -127,6 +132,14 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                             participantPhone={registration.participant.phone}
                           />
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="ערוך פרטי משתתף"
+                          onClick={() => setEditingParticipant(registration.participant)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <TableRowActions
                           registration={registration}
                           hasPayments={(registration.payments?.length ?? 0) > 0}
@@ -142,6 +155,13 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
             </TableBody>
           </Table>
         </div>}
+
+      <EditParticipantDialog
+        participant={editingParticipant}
+        isOpen={!!editingParticipant}
+        onOpenChange={(open) => { if (!open) setEditingParticipant(null); }}
+        onSave={(updated) => { updateParticipant(updated); setEditingParticipant(null); }}
+      />
     </>;
 };
 export default RegistrationsTable;
