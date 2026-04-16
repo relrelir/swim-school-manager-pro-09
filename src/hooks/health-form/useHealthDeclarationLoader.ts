@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { getHealthDeclarationByToken } from '@/services/firebase/healthDeclarations';
-import { getParticipant } from '@/services/firebase/participants';
 
 export const useHealthDeclarationLoader = () => {
   const [searchParams] = useSearchParams();
@@ -26,20 +25,16 @@ export const useHealthDeclarationLoader = () => {
       const declaration = await getHealthDeclarationByToken(token);
       if (!declaration) {
         setError('הצהרת בריאות לא נמצאה או שפג תוקפה');
+        setIsLoadingData(false);
         return;
       }
 
       setHealthDeclarationToken(declaration.token);
-
-      const participant = await getParticipant(declaration.participantId);
-      if (!participant) {
-        setError('לא נמצאו פרטי משתתף תקינים');
-        return;
-      }
-
-      setParticipantName(`${participant.firstName} ${participant.lastName}`);
-      setParticipantId(participant.idNumber);
-      setParticipantPhone(participant.phone);
+      // Use cached participant data stored in the declaration when the link was created.
+      // This avoids querying /participants which requires authentication.
+      setParticipantName(declaration.participantName ?? '');
+      setParticipantId(declaration.participantIdNumber ?? '');
+      setParticipantPhone(declaration.participantPhone ?? '');
     } catch (err) {
       console.error('Error loading health declaration:', err);
       setError('אירעה שגיאה בטעינת הצהרת הבריאות');

@@ -31,6 +31,9 @@ function fromDoc(id: string, data: Record<string, unknown>): HealthDeclaration {
     parentId: (data.parentId as string | null) ?? null,
     createdAt: (data.createdAt as string) ?? '',
     sentAt: (data.sentAt as string | null) ?? null,
+    participantName: (data.participantName as string | null) ?? null,
+    participantIdNumber: (data.participantIdNumber as string | null) ?? null,
+    participantPhone: (data.participantPhone as string | null) ?? null,
   };
 }
 
@@ -55,8 +58,17 @@ export async function getHealthDeclarationByToken(token: string): Promise<Health
   return fromDoc(d.id, d.data());
 }
 
-export async function createHealthDeclarationLink(participantId: string): Promise<HealthDeclaration> {
+export async function createHealthDeclarationLink(
+  participantId: string,
+  participantData?: { name: string; idNumber: string; phone: string }
+): Promise<HealthDeclaration> {
   const token = uuidv4();
+  const displayFields = {
+    participantName: participantData?.name ?? null,
+    participantIdNumber: participantData?.idNumber ?? null,
+    participantPhone: participantData?.phone ?? null,
+  };
+
   // Check if one already exists and reset it
   const existing = await getHealthDeclarationByParticipant(participantId);
   if (existing) {
@@ -69,8 +81,9 @@ export async function createHealthDeclarationLink(participantId: string): Promis
       parentName: null,
       parentId: null,
       sentAt: null,
+      ...displayFields,
     });
-    return { ...existing, token, formStatus: 'pending' };
+    return { ...existing, token, formStatus: 'pending', ...displayFields };
   }
 
   const ref = await addDoc(collection(db, COL), {
@@ -84,6 +97,7 @@ export async function createHealthDeclarationLink(participantId: string): Promis
     parentId: null,
     sentAt: null,
     createdAt: serverTimestamp(),
+    ...displayFields,
   });
   return {
     id: ref.id,
@@ -97,6 +111,7 @@ export async function createHealthDeclarationLink(participantId: string): Promis
     parentId: null,
     createdAt: new Date().toISOString(),
     sentAt: null,
+    ...displayFields,
   };
 }
 
