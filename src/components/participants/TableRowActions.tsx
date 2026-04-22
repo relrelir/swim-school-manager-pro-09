@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Registration, Payment } from '@/types';
-import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon, HistoryIcon } from 'lucide-react';
+import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon, HistoryIcon, ScrollText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { generateRegistrationPdf } from '@/utils/generateRegistrationPdf';
 import { generateHealthDeclarationPdf } from '@/utils/generateHealthDeclarationPdf';
+import { generateRegistrationPdf } from '@/utils/generateRegistrationPdf';
+import { generateTermsPdf } from '@/utils/generateTermsPdf';
 import { getHealthDeclarationByParticipant } from '@/services/firebase/healthDeclarations';
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from '@/context/AuthContext';
@@ -28,10 +29,12 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
   onDeleteRegistration,
 }) => {
   const { isAdmin } = useAuth();
-  const [isGeneratingRegPdf, setIsGeneratingRegPdf] = useState(false);
   const [isGeneratingHealthPdf, setIsGeneratingHealthPdf] = useState(false);
+  const [isGeneratingTermsPdf, setIsGeneratingTermsPdf] = useState(false);
+  const [isGeneratingRegistrationPdf, setIsGeneratingRegistrationPdf] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [hasHealthDeclaration, setHasHealthDeclaration] = useState(false);
+  const [hasTermsDeclaration, setHasTermsDeclaration] = useState(false);
   const [isCheckingDeclaration, setIsCheckingDeclaration] = useState(false);
   
   // Optimization: Create registrationId and participantId as useMemo to prevent unnecessary calculations
@@ -50,25 +53,31 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
       if (hasHealthDeclaration !== declarationExists) {
         setHasHealthDeclaration(declarationExists);
       }
+      const termsSigned = Boolean(declaration?.termsSignature);
+      if (hasTermsDeclaration !== termsSigned) {
+        setHasTermsDeclaration(termsSigned);
+      }
     } catch (error) {
       console.error("Error checking for health declaration:", error);
     } finally {
       setIsCheckingDeclaration(false);
     }
-  }, [registrationId, participantId, hasHealthDeclaration, isCheckingDeclaration]);
+  }, [registrationId, participantId, hasHealthDeclaration, hasTermsDeclaration, isCheckingDeclaration]);
   
   // Optimization: Use useEffect with correct dependencies
   useEffect(() => {
     checkForHealthDeclaration();
   }, [checkForHealthDeclaration]);
 
-  // Optimization: Use useCallback to prevent unnecessary rerenders
-  const handleGenerateRegPdf = useCallback(async () => {
-    setIsGeneratingRegPdf(true);
+  const handleOpenRegistrationPrint = useCallback(async () => {
+    if (!registrationId) return;
+    setIsGeneratingRegistrationPdf(true);
     try {
       await generateRegistrationPdf(registrationId);
+    } catch {
+      // toast already shown inside generateRegistrationPdf
     } finally {
-      setIsGeneratingRegPdf(false);
+      setIsGeneratingRegistrationPdf(false);
     }
   }, [registrationId]);
   
@@ -105,6 +114,18 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
     }
   }, [registrationId, participantId, registration]);
   
+  const handleDownloadTerms = useCallback(async () => {
+    if (!participantId) return;
+    setIsGeneratingTermsPdf(true);
+    try {
+      await generateTermsPdf(participantId);
+    } catch {
+      // toast already shown inside generateTermsPdf
+    } finally {
+      setIsGeneratingTermsPdf(false);
+    }
+  }, [participantId]);
+
   // Handle delete registration with confirmation - optimized with useCallback
   const handleDeleteRegistration = useCallback(() => {
     if (hasPayments) {
@@ -170,10 +191,10 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleGenerateRegPdf}
-            disabled={isGeneratingRegPdf}
+            onClick={handleOpenRegistrationPrint}
+            disabled={isGeneratingRegistrationPdf}
           >
-            {isGeneratingRegPdf ? (
+            {isGeneratingRegistrationPdf ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <FileDownIcon className="h-4 w-4" />
@@ -203,7 +224,27 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
           {hasHealthDeclaration ? "הדפס הצהרת בריאות" : "הדפס טופס הצהרת בריאות"}
         </TooltipContent>
       </Tooltip>
-      
+
+      {hasTermsDeclaration && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDownloadTerms}
+              disabled={isGeneratingTermsPdf}
+            >
+              {isGeneratingTermsPdf ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <ScrollText className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>הורד תקנון חתום</TooltipContent>
+        </Tooltip>
+      )}
+
       {isAdmin() && (
         <Tooltip>
           <TooltipTrigger asChild>

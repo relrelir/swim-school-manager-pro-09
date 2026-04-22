@@ -17,6 +17,8 @@ import LeadRegistrationPage from './pages/LeadRegistrationPage';
 import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import PrintableHealthDeclarationPage from './pages/PrintableHealthDeclarationPage';
+import PrintableRegistrationPage from './pages/PrintableRegistrationPage';
+import TermsPdfTestPage from './pages/TermsPdfTestPage';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -47,6 +49,8 @@ const AppRoutes = () => (
     <Route path="/health-form" element={<HealthFormPage />} />
     <Route path="/form-success" element={<FormSuccessPage />} />
     <Route path="/print/health-declaration" element={<PrintableHealthDeclarationPage />} />
+    <Route path="/print/registration" element={<ProtectedRoute element={<PrintableRegistrationPage />} />} />
+    <Route path="/dev/terms-pdf-test" element={<TermsPdfTestPage />} />
     <Route path="/join" element={<LeadRegistrationPage />} />
     <Route path="/accessibility" element={<AccessibilityStatementPage />} />
     <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

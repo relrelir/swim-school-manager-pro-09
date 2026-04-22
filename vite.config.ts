@@ -7,7 +7,7 @@ import path from "path";
 export default defineConfig(() => ({
   server: {
     host: "::",
-    port: 8080,
+    port: parseInt(process.env.PORT || '8080'),
     fs: {
       allow: ['.'],
     },

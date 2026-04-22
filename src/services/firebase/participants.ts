@@ -24,6 +24,7 @@ function fromDoc(id: string, data: Record<string, unknown>): Participant {
     idNumber: data.idNumber as string,
     phone: data.phone as string,
     healthApproval: (data.healthApproval as boolean) ?? false,
+    termsApproval: (data.termsApproval as boolean) ?? false,
   };
 }
 

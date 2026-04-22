@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { HealthDeclaration } from '@/types';
+import { HealthDeclaration, Registration, RegistrationWithDetails } from '@/types';
 import HealthFormLink from './health-declaration/HealthFormLink';
 
 interface HealthDeclarationFormProps {
@@ -18,6 +18,9 @@ interface HealthDeclarationFormProps {
   defaultPhone: string;
   healthDeclaration?: HealthDeclaration;
   afterSubmit?: () => void;
+  productType?: string;
+  productName?: string;
+  registration?: Registration | RegistrationWithDetails;
 }
 
 const HealthDeclarationForm: React.FC<HealthDeclarationFormProps> = ({
@@ -25,7 +28,11 @@ const HealthDeclarationForm: React.FC<HealthDeclarationFormProps> = ({
   onOpenChange,
   participantId,
   participantName,
+  defaultPhone,
   healthDeclaration,
+  productType,
+  productName,
+  registration,
 }) => {
   const isFormSigned = Boolean(
     healthDeclaration &&
@@ -66,6 +73,9 @@ const HealthDeclarationForm: React.FC<HealthDeclarationFormProps> = ({
               participantPhone={defaultPhone}
               isDisabled={false}
               className="w-full"
+              productType={productType}
+              productName={productName}
+              registration={registration}
             />
           )}
         </DialogFooter>

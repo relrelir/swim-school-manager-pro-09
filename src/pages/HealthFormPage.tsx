@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { ErrorState, LoadingState } from '@/components/health-form/HealthFormStates';
 import { useHealthForm } from '@/hooks/useHealthForm';
 import SignaturePadComponent from '@/components/health-form/SignaturePad';
+import TermsContent from '@/components/health-form/TermsContent';
 
-// אופטימיזציה: שימוש ב-lazy loading לטעינת תוכן הטופס רק כשנדרש
 const HealthDeclarationContent = lazy(() => import('@/components/health-form/HealthDeclarationContent'));
+
+type FormStep = 'health-form' | 'health-sig' | 'terms' | 'terms-sig';
 
 const HealthFormPage: React.FC = () => {
   const {
@@ -18,91 +20,96 @@ const HealthFormPage: React.FC = () => {
     participantPhone,
     error,
     formState,
+    productType,
+    productName,
     handleAgreementChange,
     handleNotesChange,
     handleParentNameChange,
     handleParentIdChange,
     handleSignatureChange,
+    handleTermsAgreementChange,
+    handleTermsSignatureChange,
+    handleAfterCareChange,
     handleSubmit
   } = useHealthForm();
 
-  const [showSignaturePad, setShowSignaturePad] = useState(false);
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [step, setStep] = useState<FormStep>('health-form');
+  const [healthSignature, setHealthSignature] = useState('');
 
-  // Loading state
-  if (isLoadingData) {
-    return <LoadingState />;
-  }
+  if (isLoadingData) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
 
-  // Show error state
-  if (error) {
-    return <ErrorState error={error} />;
-  }
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  // Step 1 → 2: validate health form and show signature pad
+  const handleHealthFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form before showing signature pad
     if (!formState.agreement) {
-      alert("יש לאשר את הצהרת הבריאות כדי להמשיך");
+      alert('יש לאשר את הצהרת הבריאות כדי להמשיך');
       return;
     }
-    
     if (!formState.parentName || !formState.parentId) {
-      alert("יש למלא את פרטי ההורה/אפוטרופוס");
+      alert('יש למלא את פרטי ההורה/אפוטרופוס');
       return;
     }
-    
-    // Show signature pad
-    setShowSignaturePad(true);
+    setStep('health-sig');
   };
 
-  const handleSignatureConfirm = async (signatureData: string) => {
+  // Step 2 → 3: save health signature, show terms
+  const handleHealthSignatureConfirm = (signatureData: string) => {
+    handleSignatureChange(signatureData);
+    setHealthSignature(signatureData);
+    setStep('terms');
+  };
+
+  // Step 3 → 4: validate terms agreement, show terms signature pad
+  const handleTermsFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formState.termsAgreement) {
+      alert('יש לאשר את קריאת התקנון כדי להמשיך');
+      return;
+    }
+    setStep('terms-sig');
+  };
+
+  // Step 4: save terms signature and submit both
+  const handleTermsSignatureConfirm = async (signatureData: string) => {
+    handleTermsSignatureChange(signatureData);
     try {
-      // Update form state with signature
-      handleSignatureChange(signatureData);
-      
-      // Submit the form with the signature
-      await handleSubmit({
-        preventDefault: () => {},
-        signature: signatureData // This will now be handled in useHealthFormState
-      } as unknown as React.FormEvent);
-      
-      // Hide signature pad and mark as submitted
-      setShowSignaturePad(false);
-      setFormSubmitted(true);
-    } catch (error) {
-      console.error("Error during form submission:", error);
-      alert("אירעה שגיאה בשליחת הטופס. אנא נסה שנית");
+      await handleSubmit(healthSignature, signatureData, {
+        participantName,
+        participantPhone,
+        participantIdNumber: participantId, // participantId here is the ID number from the loader
+        productType,
+        productName,
+        afterCare: formState.afterCare,
+      });
+    } catch {
+      alert('אירעה שגיאה בשליחת הטופס. אנא נסה שנית');
     }
   };
 
-  const handleCancelSignature = () => {
-    setShowSignaturePad(false);
-  };
+  const stepLabel = step === 'health-form' || step === 'health-sig'
+    ? 'שלב 1 מתוך 2 – הצהרת בריאות'
+    : 'שלב 2 מתוך 2 – תקנון הפעילות';
 
   return (
     <div className="container mx-auto py-10 px-4">
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>הצהרת בריאות</CardTitle>
+          <CardTitle>
+            {step === 'health-form' || step === 'health-sig' ? 'הצהרת בריאות' : 'תקנון הפעילות'}
+          </CardTitle>
           <CardDescription>
-            {participantName ? `עבור ${participantName}` : 'אנא מלא את הפרטים הבאים והצהר על בריאות המשתתף'}
+            {participantName ? `עבור ${participantName}` : 'אנא מלא את הפרטים הבאים'}
+            <span className="block text-xs text-muted-foreground mt-1">{stepLabel}</span>
           </CardDescription>
         </CardHeader>
-        
-        {showSignaturePad ? (
-          <CardContent>
-            <SignaturePadComponent 
-              onSignatureConfirm={handleSignatureConfirm}
-              onCancel={handleCancelSignature}
-            />
-          </CardContent>
-        ) : (
-          <form onSubmit={handleFormSubmit}>
+
+        {/* Step 1: Health declaration form */}
+        {step === 'health-form' && (
+          <form onSubmit={handleHealthFormSubmit}>
             <CardContent>
               <Suspense fallback={<div className="p-4 text-center">טוען תוכן טופס...</div>}>
-                <HealthDeclarationContent 
+                <HealthDeclarationContent
                   participantName={participantName}
                   participantId={participantId}
                   participantPhone={participantPhone}
@@ -114,17 +121,52 @@ const HealthFormPage: React.FC = () => {
                 />
               </Suspense>
             </CardContent>
-            
             <CardFooter>
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading || formSubmitted}
-              >
-                {isLoading ? 'שולח...' : 'אישור הצהרה'}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                המשך לחתימה
               </Button>
             </CardFooter>
           </form>
+        )}
+
+        {/* Step 2: Health declaration signature */}
+        {step === 'health-sig' && (
+          <CardContent>
+            <SignaturePadComponent
+              onSignatureConfirm={handleHealthSignatureConfirm}
+              onCancel={() => setStep('health-form')}
+            />
+          </CardContent>
+        )}
+
+        {/* Step 3: Terms content + agreement */}
+        {step === 'terms' && (
+          <form onSubmit={handleTermsFormSubmit}>
+            <CardContent>
+              <TermsContent
+                termsAgreement={formState.termsAgreement}
+                onTermsAgreementChange={handleTermsAgreementChange}
+                productType={productType}
+                afterCare={formState.afterCare}
+                onAfterCareChange={handleAfterCareChange}
+              />
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                המשך לחתימה על התקנון
+              </Button>
+            </CardFooter>
+          </form>
+        )}
+
+        {/* Step 4: Terms signature → submit */}
+        {step === 'terms-sig' && (
+          <CardContent>
+            <SignaturePadComponent
+              onSignatureConfirm={handleTermsSignatureConfirm}
+              onCancel={() => setStep('terms')}
+            />
+          </CardContent>
         )}
       </Card>
     </div>

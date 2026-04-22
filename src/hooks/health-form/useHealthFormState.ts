@@ -9,10 +9,9 @@ interface FormState {
   parentName: string;
   parentId: string;
   signature: string;
-}
-
-interface CustomFormEvent extends React.FormEvent {
-  signature?: string;
+  termsAgreement: boolean;
+  termsSignature: string;
+  afterCare: boolean;
 }
 
 export const useHealthFormState = (token: string | null) => {
@@ -24,6 +23,9 @@ export const useHealthFormState = (token: string | null) => {
     parentName: '',
     parentId: '',
     signature: '',
+    termsAgreement: false,
+    termsSignature: '',
+    afterCare: false,
   });
 
   const handleAgreementChange = (value: boolean) =>
@@ -41,25 +43,22 @@ export const useHealthFormState = (token: string | null) => {
   const handleSignatureChange = (signatureData: string) =>
     setFormState((prev) => ({ ...prev, signature: signatureData }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleTermsAgreementChange = (value: boolean) =>
+    setFormState((prev) => ({ ...prev, termsAgreement: value }));
 
+  const handleTermsSignatureChange = (signatureData: string) =>
+    setFormState((prev) => ({ ...prev, termsSignature: signatureData }));
+
+  const handleAfterCareChange = (value: boolean) =>
+    setFormState((prev) => ({ ...prev, afterCare: value }));
+
+  const handleSubmit = async (
+    signature: string,
+    termsSignature: string,
+    navExtra?: Record<string, unknown>
+  ) => {
     if (!token) {
       toast({ title: 'שגיאה', description: 'מזהה הצהרת בריאות חסר', variant: 'destructive' });
-      return;
-    }
-    if (!formState.agreement) {
-      toast({ title: 'שגיאה', description: 'יש לאשר את הצהרת הבריאות כדי להמשיך', variant: 'destructive' });
-      return;
-    }
-    if (!formState.parentName || !formState.parentId) {
-      toast({ title: 'שגיאה', description: 'יש למלא את פרטי ההורה/אפוטרופוס', variant: 'destructive' });
-      return;
-    }
-
-    const signature = (e as CustomFormEvent).signature || formState.signature;
-    if (!signature) {
-      toast({ title: 'שגיאה', description: 'יש להוסיף חתימה כדי להמשיך', variant: 'destructive' });
       return;
     }
 
@@ -67,12 +66,14 @@ export const useHealthFormState = (token: string | null) => {
     try {
       await submitHealthForm(token, {
         signature,
+        termsSignature,
         notes: formState.notes,
         parentName: formState.parentName,
         parentId: formState.parentId,
+        afterCare: formState.afterCare,
       });
-      toast({ title: 'הצהרת הבריאות נשלחה בהצלחה', description: 'תודה על מילוי הטופס' });
-      navigate('/form-success');
+      toast({ title: 'הצהרת הבריאות והתקנון נשלחו בהצלחה', description: 'תודה על מילוי הטופס' });
+      navigate('/form-success', { state: { token, ...navExtra } });
     } catch (err) {
       console.error('Error submitting health form:', err);
       toast({ title: 'שגיאה', description: 'אירעה שגיאה בשליחת הצהרת הבריאות', variant: 'destructive' });
@@ -82,8 +83,16 @@ export const useHealthFormState = (token: string | null) => {
   };
 
   return {
-    isLoading, formState,
-    handleAgreementChange, handleNotesChange, handleParentNameChange,
-    handleParentIdChange, handleSignatureChange, handleSubmit,
+    isLoading,
+    formState,
+    handleAgreementChange,
+    handleNotesChange,
+    handleParentNameChange,
+    handleParentIdChange,
+    handleSignatureChange,
+    handleTermsAgreementChange,
+    handleTermsSignatureChange,
+    handleAfterCareChange,
+    handleSubmit,
   };
 };

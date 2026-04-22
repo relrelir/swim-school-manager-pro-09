@@ -38,12 +38,13 @@ service cloud.firestore {
     match /participants/{docId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
-      // Health form batch: allow setting healthApproval=true from unauthenticated context
+      // Health form batch: allow setting healthApproval + termsApproval = true from unauthenticated context
       allow update: if
         !isAuthenticated() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['healthApproval', 'updatedAt']) &&
-        request.resource.data.healthApproval == true;
+          .hasOnly(['healthApproval', 'termsApproval', 'updatedAt']) &&
+        request.resource.data.healthApproval == true &&
+        request.resource.data.termsApproval == true;
     }
 
     // Registrations: any authenticated user can read; only admins can write
@@ -82,7 +83,11 @@ service cloud.firestore {
          request.resource.data.parentId.size() <= 12 &&
          request.resource.data.signature is string &&
          request.resource.data.signature.size() <= 524288 &&
-         request.resource.data.get('notes', '').size() <= 2000);
+         request.resource.data.get('notes', '').size() <= 2000 &&
+         request.resource.data.termsSignature is string &&
+         request.resource.data.termsSignature.size() <= 524288 &&
+         request.resource.data.get('termsSignedDate', '').size() <= 50 &&
+         (request.resource.data.afterCare == null || request.resource.data.afterCare is bool));
 
       allow delete: if isAdmin();
     }

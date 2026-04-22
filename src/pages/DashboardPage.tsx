@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Users, BookOpen, TrendingUp, UserPlus, DollarSign, CheckCircle } from 'lucide-react';
+import { Users, BookOpen, TrendingUp, UserPlus, DollarSign, CheckCircle, ScrollText } from 'lucide-react';
 
 const PRODUCT_TYPE_COLORS: Record<string, string> = {
   'קורס': '#3b82f6',
@@ -47,6 +47,7 @@ export default function DashboardPage() {
     const totalRequired = regsWithDetails.reduce((sum, r) => sum + r.effectiveRequiredAmount, 0);
     const totalPaid     = regsWithDetails.reduce((sum, r) => sum + r.paidAmount, 0);
     const healthApproved = participants.filter((p) => p.healthApproval).length;
+    const termsApproved = participants.filter((p) => p.termsApproval).length;
     const newLeads = leads.filter((l) => l.status === 'חדש').length;
 
     // Registrations per product type
@@ -66,7 +67,7 @@ export default function DashboardPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
-    return { totalPaid, totalRequired, healthApproved, newLeads, byType, occupancy, registrationsCount: regsWithDetails.length };
+    return { totalPaid, totalRequired, healthApproved, termsApproved, newLeads, byType, occupancy, registrationsCount: regsWithDetails.length };
   }, [registrations, products, participants, payments, leads, getAllRegistrationsWithDetails]);
 
   const pieData = Object.entries(stats.byType)
@@ -88,6 +89,13 @@ export default function DashboardPage() {
           subtitle="אושרו"
           icon={CheckCircle}
           color="text-green-600"
+        />
+        <StatCard
+          title="תקנון"
+          value={`${stats.termsApproved}/${participants.length}`}
+          subtitle="חתמו"
+          icon={ScrollText}
+          color="text-blue-600"
         />
         {isAdmin() && (
           <>

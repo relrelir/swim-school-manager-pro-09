@@ -62,7 +62,19 @@ export interface HealthDeclarationsContextType {
   updateHealthDeclaration: (id: string, updates: Partial<HealthDeclaration>) => Promise<HealthDeclaration | undefined>;
   getHealthDeclarationForRegistration: (participantId: string) => Promise<HealthDeclaration | undefined>;
   deleteHealthDeclaration: (id: string) => Promise<void>;
-  createHealthDeclarationLink: (participantId: string, participantData?: { name: string; idNumber: string; phone: string }) => Promise<string | undefined>;
+  createHealthDeclarationLink: (
+    participantId: string,
+    participantData?: { name: string; idNumber: string; phone: string },
+    productContext?: { productType?: string; productName?: string },
+    registrationContext?: {
+      registrationId?: string;
+      registrationDate?: string;
+      requiredAmount?: number;
+      discountAmount?: number | null;
+      discountApproved?: boolean;
+      effectiveRequiredAmount?: number;
+    }
+  ) => Promise<string | undefined>;
   getHealthDeclarationByToken: (token: string) => Promise<HealthDeclaration | undefined>;
   loading: boolean;
 }

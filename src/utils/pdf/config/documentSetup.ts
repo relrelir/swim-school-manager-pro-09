@@ -2,6 +2,7 @@
 import { jsPDF } from 'jspdf';
 import { configureHebrewFont, applyFontFallback } from './fontConfig';
 import { configureDocumentStyle } from './documentStyle';
+import { addPageBackground } from './backgroundImage';
 
 /**
  * Creates a new PDF document with RTL support for Hebrew
@@ -15,6 +16,9 @@ export const createRtlPdf = async (): Promise<jsPDF> => {
     unit: 'mm',
     format: 'a4',
   });
+
+  // Add letterhead background before any content
+  await addPageBackground(pdf);
 
   try {
     // Configure for Hebrew text support with Alef font

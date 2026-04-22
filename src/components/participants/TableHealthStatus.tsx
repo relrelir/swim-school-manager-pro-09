@@ -12,12 +12,16 @@ interface TableHealthStatusProps {
   participant?: Participant;
   onUpdateHealthApproval: (isApproved: boolean) => void;
   onOpenHealthForm?: () => void;
+  productType?: string;
+  productName?: string;
 }
 
 const TableHealthStatus: React.FC<TableHealthStatusProps> = ({
   registration,
   participant,
   onUpdateHealthApproval,
+  productType,
+  productName,
 }) => {
   const [healthDeclaration, setHealthDeclaration] = useState<HealthDeclaration | undefined>(undefined);
   const { getHealthDeclarationForRegistration } = useHealthDeclarationsContext();
@@ -69,6 +73,9 @@ const TableHealthStatus: React.FC<TableHealthStatusProps> = ({
           participantIdNumber={participant.idNumber}
           participantPhone={participant.phone}
           isDisabled={!isAdmin()}
+          productType={productType}
+          productName={productName}
+          registration={registration}
         />
       )}
     </div>

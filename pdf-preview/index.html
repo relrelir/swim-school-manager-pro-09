@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>PDF Preview — הצהרת בריאות</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #e0e0e0; display: flex; justify-content: center; padding: 40px 20px; font-family: Arial, sans-serif; }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    background: white url('pdf-background.png') no-repeat center center / cover;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .content {
+    position: absolute;
+    top: 58mm;
+    bottom: 38mm;
+    left: 20mm;
+    right: 20mm;
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+    font-size: 10pt;
+    color: #222;
+    overflow: hidden;
+  }
+
+  .doc-title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 2mm;
+  }
+
+  .date-line {
+    text-align: left;
+    font-size: 9pt;
+    color: #555;
+    margin-top: -2mm;
+  }
+
+  /* Two-column info block */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm;
+  }
+
+  .info-box {
+    border: 1px solid #ccc;
+    border-radius: 2mm;
+    overflow: hidden;
+  }
+
+  .info-box-title {
+    background: #f0f0f0;
+    padding: 1.5mm 3mm;
+    font-size: 9pt;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .info-row {
+    display: flex;
+    border-bottom: 1px solid #eee;
+  }
+  .info-row:last-child { border-bottom: none; }
+
+  .info-label {
+    padding: 1.5mm 3mm;
+    font-weight: bold;
+    font-size: 9pt;
+    white-space: nowrap;
+    min-width: 28mm;
+    background: #fafafa;
+    border-left: 1px solid #eee;
+  }
+  .info-value {
+    padding: 1.5mm 3mm;
+    font-size: 9pt;
+    direction: ltr;
+    text-align: right;
+  }
+
+  /* Declaration box */
+  .section-header {
+    font-size: 10pt;
+    font-weight: bold;
+    margin-bottom: 1mm;
+  }
+
+  .declaration-box {
+    border: 1px solid #ccc;
+    border-radius: 2mm;
+    padding: 2mm 3mm;
+  }
+
+  .declaration-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
+  }
+
+  .declaration-box li {
+    font-size: 8.5pt;
+    line-height: 1.4;
+    padding-right: 1mm;
+  }
+
+  .declaration-box li::before {
+    content: "• ";
+    color: #1a7a6e;
+    font-weight: bold;
+  }
+
+  /* Bottom sections: notes + confirmation + signature in one row */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm;
+  }
+
+  .small-box {
+    border: 1px solid #ccc;
+    border-radius: 2mm;
+    padding: 2mm 3mm;
+    min-height: 14mm;
+  }
+
+  .small-box .section-header {
+    margin-bottom: 1.5mm;
+  }
+
+  .small-box .content-text {
+    font-size: 8.5pt;
+    color: #444;
+  }
+
+  /* Signature row */
+  .signature-row {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    margin-top: -1mm;
+  }
+
+  .sig-box {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 2mm;
+    padding: 2mm 3mm;
+    min-height: 22mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sig-line {
+    border-bottom: 1.5px solid #666;
+    margin: auto 3mm 2mm 3mm;
+  }
+
+  .sig-label {
+    font-size: 8pt;
+    color: #666;
+    text-align: center;
+    margin-top: 1mm;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+
+    <!-- Title + Date -->
+    <div class="doc-title">הצהרת בריאות</div>
+    <div class="date-line">תאריך: 20.4.2026</div>
+
+    <!-- Participant + Parent side by side -->
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-box-title">פרטי המשתתף</div>
+        <div class="info-row">
+          <span class="info-label">שם מלא</span>
+          <span class="info-value">עמית ברחד</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">תעודת זהות</span>
+          <span class="info-value">344561352</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">טלפון</span>
+          <span class="info-value">054-525-6231</span>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-title">פרטי הורה/אפוטרופוס</div>
+        <div class="info-row">
+          <span class="info-label">שם מלא</span>
+          <span class="info-value">עמית ברחד</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">תעודת זהות</span>
+          <span class="info-value">344561352</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Declaration -->
+    <div>
+      <div class="section-header">תוכן ההצהרה</div>
+      <div class="declaration-box">
+        <ul>
+          <li>אני מצהיר/ה כי בני/בתי בריא/ה ובכושר ובמצב בריאותי תקין המאפשר השתתפות בפעילות.</li>
+          <li>לא ידוע לי על מגבלות רפואיות המונעות להשתתף בפעילות.</li>
+          <li>לא ידוע לי על רגישויות, מחלות או בעיות רפואיות אחרות שעלולות להשפיע על ההשתתפות.</li>
+          <li>במידה ויש מגבלה רפואית, יש לציין אותה בהערות ולצרף אישור רפואי המאשר השתתפות.</li>
+          <li>אני מתחייב/ת לעדכן את המדריכים על כל שינוי במצב הבריאותי.</li>
+          <li>אני מאשר/ת לצוות הרפואי לתת טיפול ראשוני במקרה הצורך.</li>
+          <li>ידוע לי שללא הצהרת בריאות חתומה לא יוכל בני/בתי להשתתף בפעילות.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Notes + Confirmation side by side -->
+    <div class="bottom-row">
+      <div class="small-box">
+        <div class="section-header">הערות רפואיות</div>
+        <div class="content-text">אין הערות רפואיות</div>
+      </div>
+      <div class="small-box">
+        <div class="section-header">אישור</div>
+        <div class="content-text">אני מאשר/ת את פרטיי האישיים וכי כל הפרטים שמסרתי הם נכונים.</div>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="sig-box">
+      <div class="section-header">חתימה</div>
+      <div style="flex:1;"></div>
+      <div class="sig-line"></div>
+      <div class="sig-label">חתימת ההורה/אפוטרופוס</div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

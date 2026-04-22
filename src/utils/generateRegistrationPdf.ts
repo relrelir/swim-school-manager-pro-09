@@ -2,6 +2,7 @@ import { getRegistration } from '@/services/firebase/registrations';
 import { getParticipant } from '@/services/firebase/participants';
 import { getPaymentsByRegistration } from '@/services/firebase/payments';
 import { getProduct } from '@/services/firebase/products';
+import { getHealthDeclarationByParticipant } from '@/services/firebase/healthDeclarations';
 import { createRtlPdf } from './pdf/pdfConfig';
 import { buildRegistrationPDF } from './pdf/registrationPdfContentBuilder';
 import { toast } from '@/components/ui/use-toast';
@@ -11,18 +12,22 @@ export const generateRegistrationPdf = async (registrationId: string) => {
     const registration = await getRegistration(registrationId);
     if (!registration) throw new Error('פרטי הרישום לא נמצאו');
 
-    const [participant, payments, product] = await Promise.all([
+    const [participant, payments, product, declaration] = await Promise.all([
       getParticipant(registration.participantId),
       getPaymentsByRegistration(registrationId),
       getProduct(registration.productId),
+      getHealthDeclarationByParticipant(registration.participantId),
     ]);
 
     if (!participant) throw new Error('פרטי המשתתף לא נמצאו');
     if (!product) throw new Error('פרטי הקורס לא נמצאו');
 
     const pdf = await createRtlPdf();
-    const fileName = buildRegistrationPDF(pdf, registration, participant, payments, product.name);
-    pdf.save(fileName);
+    const fileName = buildRegistrationPDF(pdf, registration, participant, payments, product.name, {
+      productType: product.type,
+      afterCare: declaration?.afterCare ?? null,
+    });
+    setTimeout(() => pdf.save(fileName), 100);
 
     toast({ title: 'PDF נוצר בהצלחה', description: 'אישור הרישום נשמר במכשיר שלך' });
     return fileName;

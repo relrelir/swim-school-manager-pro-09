@@ -1,5 +1,5 @@
 import { toast } from '@/components/ui/use-toast';
-import { Participant, Registration, RegistrationWithDetails } from '@/types';
+import { Participant, Product, Registration, RegistrationWithDetails } from '@/types';
 import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 
 /**
@@ -64,8 +64,25 @@ export const usePaymentActions = (dataContext: any) => {
     // Auto-create health declaration and prepare send info
     let healthSendInfo: HealthDeclarationSendInfo | null = null;
     try {
+      const product = (dataContext.products as Product[] | undefined)?.find((p) => p.id === productId);
+      const effectiveRequiredAmount = Math.max(
+        0,
+        registration.requiredAmount -
+          (registration.discountApproved ? registration.discountAmount ?? 0 : 0)
+      );
       const healthDecl = await addHealthDeclaration({
         participantId: participant.id,
+        participantName: `${participant.firstName} ${participant.lastName}`,
+        participantIdNumber: participant.idNumber ?? null,
+        participantPhone: participant.phone ?? null,
+        productType: product?.type ?? null,
+        productName: product?.name ?? null,
+        registrationId: registration.id,
+        registrationDate: registration.registrationDate,
+        requiredAmount: registration.requiredAmount,
+        discountAmount: registration.discountAmount ?? null,
+        discountApproved: registration.discountApproved,
+        effectiveRequiredAmount,
         token: '',            // service generates a UUID token
         formStatus: 'pending',
         submissionDate: null,

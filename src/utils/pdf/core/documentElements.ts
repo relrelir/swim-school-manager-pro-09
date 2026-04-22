@@ -8,10 +8,10 @@ import { configureDocumentStyle } from '../pdfConfig';
 export const addPdfTitle = (pdf: jsPDF, title: string): void => {
   configureDocumentStyle(pdf);
   pdf.setFontSize(20);
-  
+
   // Hebrew title should be RTL
   pdf.setR2L(true);
-  pdf.text(title, pdf.internal.pageSize.width / 2, 20, { align: 'center' });
+  pdf.text(title, pdf.internal.pageSize.width / 2, 65, { align: 'center' });
   pdf.setR2L(false); // Reset for subsequent operations
 };
 
@@ -21,11 +21,10 @@ export const addPdfTitle = (pdf: jsPDF, title: string): void => {
 export const addPdfDate = (pdf: jsPDF, date: string): void => {
   configureDocumentStyle(pdf);
   pdf.setFontSize(10);
-  
+
   // Date is always LTR (numbers)
   pdf.setR2L(false);
-  // Use explicit LTR for date with strong controls
-  pdf.text(date, pdf.internal.pageSize.width - 20, 10, { align: 'right' });
+  pdf.text(date, pdf.internal.pageSize.width - 20, 73, { align: 'right' });
 };
 
 /**

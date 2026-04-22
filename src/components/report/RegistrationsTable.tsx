@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Pencil } from 'lucide-react';
+import { CheckCircle, AlertCircle, Pencil } from 'lucide-react';
 import { Participant, PaymentStatus, Registration, RegistrationWithDetails } from '@/types';
 import { useData } from '@/context/DataContext';
 import TableRowActions from '@/components/participants/TableRowActions';
@@ -68,6 +68,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                 <TableHead>מספרי קבלות</TableHead>
                 <TableHead>מפגש נוכחי</TableHead>
                 <TableHead>סטטוס תשלום</TableHead>
+                <TableHead>תקנון</TableHead>
                 <TableHead>פעולות</TableHead>
               </TableRow>
             </TableHeader>
@@ -117,6 +118,22 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                       {registration.paymentStatus}
                     </TableCell>
                     <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">
+                            {registration.participant.termsApproval ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <AlertCircle className="h-5 w-5 text-amber-500" />
+                            )}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {registration.participant.termsApproval ? 'תקנון נחתם' : 'תקנון לא נחתם'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2 flex-wrap">
                         {registration.participant.healthApproval ? (
                           <Tooltip>
@@ -131,6 +148,9 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                             participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
                             participantIdNumber={registration.participant.idNumber}
                             participantPhone={registration.participant.phone}
+                            productType={registration.product?.type}
+                            productName={registration.product?.name}
+                            registration={registration}
                           />
                         )}
                         <Button

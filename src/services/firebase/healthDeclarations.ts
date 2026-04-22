@@ -34,6 +34,17 @@ function fromDoc(id: string, data: Record<string, unknown>): HealthDeclaration {
     participantName: (data.participantName as string | null) ?? null,
     participantIdNumber: (data.participantIdNumber as string | null) ?? null,
     participantPhone: (data.participantPhone as string | null) ?? null,
+    termsSignature: (data.termsSignature as string | null) ?? null,
+    termsSignedDate: (data.termsSignedDate as string | null) ?? null,
+    productType: (data.productType as HealthDeclaration['productType']) ?? null,
+    productName: (data.productName as string | null) ?? null,
+    afterCare: (data.afterCare as boolean | null) ?? null,
+    registrationId: (data.registrationId as string | null) ?? null,
+    registrationDate: (data.registrationDate as string | null) ?? null,
+    requiredAmount: (data.requiredAmount as number | null) ?? null,
+    discountAmount: (data.discountAmount as number | null) ?? null,
+    discountApproved: (data.discountApproved as boolean | null) ?? null,
+    effectiveRequiredAmount: (data.effectiveRequiredAmount as number | null) ?? null,
   };
 }
 
@@ -60,14 +71,38 @@ export async function getHealthDeclarationByToken(token: string): Promise<Health
 
 export async function createHealthDeclarationLink(
   participantId: string,
-  participantData?: { name: string; idNumber: string; phone: string }
+  participantData?: { name: string; idNumber: string; phone: string },
+  productContext?: { productType?: string; productName?: string },
+  registrationContext?: {
+    registrationId?: string;
+    registrationDate?: string;
+    requiredAmount?: number;
+    discountAmount?: number | null;
+    discountApproved?: boolean;
+    effectiveRequiredAmount?: number;
+  }
 ): Promise<HealthDeclaration> {
   const token = uuidv4();
-  const displayFields = {
+  const displayFields: Record<string, unknown> = {
     participantName: participantData?.name ?? null,
     participantIdNumber: participantData?.idNumber ?? null,
     participantPhone: participantData?.phone ?? null,
   };
+  // Only overwrite product context if explicitly provided — avoids clearing existing values
+  if (productContext) {
+    displayFields.productType = productContext.productType ?? null;
+    displayFields.productName = productContext.productName ?? null;
+  }
+  if (registrationContext) {
+    displayFields.registrationId = registrationContext.registrationId ?? null;
+    displayFields.registrationDate = registrationContext.registrationDate ?? null;
+    displayFields.requiredAmount = registrationContext.requiredAmount ?? null;
+    displayFields.discountAmount = registrationContext.discountAmount ?? null;
+    displayFields.discountApproved = registrationContext.discountApproved ?? null;
+    displayFields.effectiveRequiredAmount = registrationContext.effectiveRequiredAmount ?? null;
+  }
+
+  const termsReset = { termsSignature: null, termsSignedDate: null, afterCare: null };
 
   // Check if one already exists and reset it
   const existing = await getHealthDeclarationByParticipant(participantId);
@@ -81,9 +116,10 @@ export async function createHealthDeclarationLink(
       parentName: null,
       parentId: null,
       sentAt: null,
+      ...termsReset,
       ...displayFields,
     });
-    return { ...existing, token, formStatus: 'pending', ...displayFields };
+    return { ...existing, token, formStatus: 'pending', ...termsReset, ...displayFields };
   }
 
   const ref = await addDoc(collection(db, COL), {
@@ -96,6 +132,7 @@ export async function createHealthDeclarationLink(
     parentName: null,
     parentId: null,
     sentAt: null,
+    ...termsReset,
     createdAt: serverTimestamp(),
     ...displayFields,
   });
@@ -116,16 +153,18 @@ export async function createHealthDeclarationLink(
 }
 
 /**
- * Atomically marks the health declaration as signed AND sets participant.healthApproval = true.
- * Uses a Firestore batch to avoid the race condition that existed in the original code.
+ * Atomically marks the health declaration as signed AND sets participant.healthApproval + termsApproval = true.
+ * Uses a Firestore batch to avoid race conditions.
  */
 export async function submitHealthForm(
   token: string,
   formData: {
     signature: string;
+    termsSignature: string;
     notes?: string;
     parentName?: string;
     parentId?: string;
+    afterCare?: boolean;
   }
 ): Promise<boolean> {
   const declaration = await getHealthDeclarationByToken(token);
@@ -133,7 +172,6 @@ export async function submitHealthForm(
 
   const batch = writeBatch(db);
 
-  // Update health declaration
   batch.update(doc(db, COL, declaration.id), {
     formStatus: 'signed',
     submissionDate: new Date().toISOString(),
@@ -141,11 +179,14 @@ export async function submitHealthForm(
     notes: formData.notes ?? null,
     parentName: formData.parentName ?? null,
     parentId: formData.parentId ?? null,
+    termsSignature: formData.termsSignature,
+    termsSignedDate: new Date().toISOString(),
+    afterCare: formData.afterCare ?? null,
   });
 
-  // Atomically update participant health approval
   batch.update(doc(db, 'participants', declaration.participantId), {
     healthApproval: true,
+    termsApproval: true,
     updatedAt: serverTimestamp(),
   });
 

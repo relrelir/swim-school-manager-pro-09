@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import SendHealthDeclarationDialog, {
   type HealthDeclarationSendInfo,
 } from '@/components/participants/SendHealthDeclarationDialog';
+import type { Registration, RegistrationWithDetails } from '@/types';
 
 interface HealthFormLinkProps {
   participantId: string;
@@ -15,6 +16,9 @@ interface HealthFormLinkProps {
   participantPhone?: string;
   isDisabled?: boolean;
   className?: string;
+  productType?: string;
+  productName?: string;
+  registration?: Registration | RegistrationWithDetails;
 }
 
 const HealthFormLink = ({
@@ -24,6 +28,9 @@ const HealthFormLink = ({
   participantPhone = '',
   isDisabled,
   className,
+  productType,
+  productName,
+  registration,
 }: HealthFormLinkProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [sendInfo, setSendInfo] = useState<HealthDeclarationSendInfo | null>(null);
@@ -43,11 +50,28 @@ const HealthFormLink = ({
     setIsGenerating(true);
     try {
       // createHealthDeclarationLink resets existing token or creates new one
-      const path = await createHealthDeclarationLink(participantId, {
-        name: participantName,
-        idNumber: participantIdNumber,
-        phone: participantPhone,
-      });
+      const registrationContext = registration
+        ? {
+            registrationId: registration.id,
+            registrationDate: registration.registrationDate,
+            requiredAmount: registration.requiredAmount,
+            discountAmount: registration.discountAmount ?? null,
+            discountApproved: registration.discountApproved,
+            effectiveRequiredAmount:
+              (registration as RegistrationWithDetails).effectiveRequiredAmount ??
+              Math.max(
+                0,
+                registration.requiredAmount -
+                  (registration.discountApproved ? registration.discountAmount ?? 0 : 0)
+              ),
+          }
+        : undefined;
+      const path = await createHealthDeclarationLink(
+        participantId,
+        { name: participantName, idNumber: participantIdNumber, phone: participantPhone },
+        productType || productName ? { productType, productName } : undefined,
+        registrationContext
+      );
       if (path) {
         const fullUrl = `${window.location.origin}${path}`;
         setSendInfo({

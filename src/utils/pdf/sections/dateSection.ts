@@ -13,10 +13,9 @@ export function addDateSection(
 ): void {
   const pageWidth = pdf.internal.pageSize.getWidth();
   
-  // Add date in top right corner with correct LTR formatting
+  // Add date below title with correct LTR formatting
   pdf.setFontSize(10);
-  // Apply forceLtrDirection AND reverseString to ensure date displays correctly
-  pdf.text(reverseString(forceLtrDirection(dateStr)), pageWidth - margin, 10, { align: 'right' });
+  pdf.text(reverseString(forceLtrDirection(dateStr)), pageWidth - margin, currentY, { align: 'right' });
   
   // Reset font size for content
   pdf.setFontSize(12);

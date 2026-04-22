@@ -13,6 +13,8 @@ export const useHealthDeclarationLoader = () => {
   const [participantPhone, setParticipantPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [healthDeclarationToken, setHealthDeclarationToken] = useState<string | null>(null);
+  const [productType, setProductType] = useState<string | null>(null);
+  const [productName, setProductName] = useState<string | null>(null);
 
   const loadHealthDeclaration = useCallback(async () => {
     if (!token) {
@@ -30,11 +32,11 @@ export const useHealthDeclarationLoader = () => {
       }
 
       setHealthDeclarationToken(declaration.token);
-      // Use cached participant data stored in the declaration when the link was created.
-      // This avoids querying /participants which requires authentication.
       setParticipantName(declaration.participantName ?? '');
       setParticipantId(declaration.participantIdNumber ?? '');
       setParticipantPhone(declaration.participantPhone ?? '');
+      setProductType(declaration.productType ?? null);
+      setProductName(declaration.productName ?? null);
     } catch (err) {
       console.error('Error loading health declaration:', err);
       setError('אירעה שגיאה בטעינת הצהרת הבריאות');
@@ -45,5 +47,5 @@ export const useHealthDeclarationLoader = () => {
 
   useEffect(() => { loadHealthDeclaration(); }, [loadHealthDeclaration]);
 
-  return { isLoadingData, participantName, participantId, participantPhone, error, healthDeclarationId: healthDeclarationToken };
+  return { isLoadingData, participantName, participantId, participantPhone, error, healthDeclarationId: healthDeclarationToken, productType, productName };
 };

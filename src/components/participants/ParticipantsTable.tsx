@@ -3,6 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 import { Participant, PaymentStatus, Registration, RegistrationWithDetails, Payment, HealthDeclaration } from '@/types';
+import { CheckCircle, AlertCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import TableHealthStatus from './TableHealthStatus';
 import TablePaymentInfo from './TablePaymentInfo';
 import TableReceiptNumbers from './TableReceiptNumbers';
@@ -63,6 +65,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
             <TableHead>מספרי קבלות</TableHead>
             <TableHead>הנחה</TableHead>
             <TableHead>הצהרת בריאות</TableHead>
+            <TableHead>תקנון</TableHead>
             <TableHead>סטטוס</TableHead>
             <TableHead>פעולות</TableHead>
           </TableRow>
@@ -107,12 +110,30 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     'לא'}
                 </TableCell>
                 <TableCell>
-                  <TableHealthStatus 
+                  <TableHealthStatus
                     registration={registration}
                     participant={participant}
                     onUpdateHealthApproval={(isApproved) => onUpdateHealthApproval(registration.id, isApproved)}
                     onOpenHealthForm={() => onOpenHealthForm(registration.id)}
+                    productType={registration.product?.type}
+                    productName={registration.product?.name}
                   />
+                </TableCell>
+                <TableCell>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        {participant.termsApproval ? (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-amber-500" />
+                        )}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {participant.termsApproval ? 'תקנון נחתם' : 'תקנון לא נחתם'}
+                    </TooltipContent>
+                  </Tooltip>
                 </TableCell>
                 <TableCell className={`font-semibold ${getStatusClassName(status)}`}>
                   {status}

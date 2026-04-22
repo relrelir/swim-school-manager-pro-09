@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Participant, RegistrationWithDetails, HealthDeclaration } from '@/types';
+import { Participant, Registration, RegistrationWithDetails, HealthDeclaration } from '@/types';
 import AddParticipantDialog from '@/components/participants/AddParticipantDialog';
 import AddPaymentDialog from '@/components/participants/AddPaymentDialog';
 import HealthDeclarationForm from '@/components/participants/HealthDeclarationForm';
@@ -33,12 +33,18 @@ interface ParticipantsDialogsProps {
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
+    productType?: string;
+    productName?: string;
+    registration?: Registration | RegistrationWithDetails;
   } | null;
   setCurrentHealthDeclaration: React.Dispatch<React.SetStateAction<{
     participantId: string;
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
+    productType?: string;
+    productName?: string;
+    registration?: Registration | RegistrationWithDetails;
   } | null>>;
   handleAddParticipant: (e: React.FormEvent) => void;
   handleAddPayment: (e: React.FormEvent) => void;
@@ -96,6 +102,9 @@ const ParticipantsDialogs: React.FC<ParticipantsDialogsProps> = ({
           participantName={currentHealthDeclaration.participantName}
           defaultPhone={currentHealthDeclaration.phone}
           healthDeclaration={currentHealthDeclaration.declaration}
+          productType={currentHealthDeclaration.productType}
+          productName={currentHealthDeclaration.productName}
+          registration={currentHealthDeclaration.registration ?? currentRegistration ?? undefined}
           afterSubmit={() => {}}
         />
       )}

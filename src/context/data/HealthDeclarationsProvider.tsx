@@ -27,7 +27,42 @@ export const HealthDeclarationsProvider: React.FC<{ children: React.ReactNode }>
 
   const addHealthDeclaration = async (data: Omit<HealthDeclaration, 'id'>): Promise<HealthDeclaration | undefined> => {
     try {
-      const created = await hdService.createHealthDeclarationLink(data.participantId);
+      const participantData = data.participantName
+        ? {
+            name: data.participantName,
+            idNumber: data.participantIdNumber ?? '',
+            phone: data.participantPhone ?? '',
+          }
+        : undefined;
+      const productContext = (data.productType || data.productName)
+        ? {
+            productType: data.productType ?? undefined,
+            productName: data.productName ?? undefined,
+          }
+        : undefined;
+      const hasRegistrationContext =
+        data.registrationId != null ||
+        data.registrationDate != null ||
+        data.requiredAmount != null ||
+        data.discountAmount != null ||
+        data.discountApproved != null ||
+        data.effectiveRequiredAmount != null;
+      const registrationContext = hasRegistrationContext
+        ? {
+            registrationId: data.registrationId ?? undefined,
+            registrationDate: data.registrationDate ?? undefined,
+            requiredAmount: data.requiredAmount ?? undefined,
+            discountAmount: data.discountAmount ?? null,
+            discountApproved: data.discountApproved ?? undefined,
+            effectiveRequiredAmount: data.effectiveRequiredAmount ?? undefined,
+          }
+        : undefined;
+      const created = await hdService.createHealthDeclarationLink(
+        data.participantId,
+        participantData,
+        productContext,
+        registrationContext
+      );
       return created;
     } catch (err) {
       console.error('Error adding health declaration:', err);
@@ -62,10 +97,24 @@ export const HealthDeclarationsProvider: React.FC<{ children: React.ReactNode }>
 
   const createHealthDeclarationLink = async (
     participantId: string,
-    participantData?: { name: string; idNumber: string; phone: string }
+    participantData?: { name: string; idNumber: string; phone: string },
+    productContext?: { productType?: string; productName?: string },
+    registrationContext?: {
+      registrationId?: string;
+      registrationDate?: string;
+      requiredAmount?: number;
+      discountAmount?: number | null;
+      discountApproved?: boolean;
+      effectiveRequiredAmount?: number;
+    }
   ): Promise<string | undefined> => {
     try {
-      const declaration = await hdService.createHealthDeclarationLink(participantId, participantData);
+      const declaration = await hdService.createHealthDeclarationLink(
+        participantId,
+        participantData,
+        productContext,
+        registrationContext
+      );
       return `/health-form/${declaration.token}`;
     } catch (err) {
       console.error('Error creating health declaration link:', err);

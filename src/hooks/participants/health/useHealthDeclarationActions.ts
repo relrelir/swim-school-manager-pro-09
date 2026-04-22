@@ -1,5 +1,5 @@
 
-import { Participant, Registration, HealthDeclaration } from '@/types';
+import { Participant, Registration, RegistrationWithDetails, HealthDeclaration } from '@/types';
 
 /**
  * Hook for health declaration operations
@@ -15,6 +15,9 @@ export const useHealthDeclarationActions = (
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
+    productType?: string;
+    productName?: string;
+    registration?: Registration | RegistrationWithDetails;
   } | null) => void,
   setIsLinkDialogOpen: (isOpen: boolean) => void
 ) => {
@@ -31,11 +34,15 @@ export const useHealthDeclarationActions = (
 
     const declaration = getHealthDeclarationForRegistration(registration.participantId);
 
+    const withDetails = registration as RegistrationWithDetails;
     setCurrentHealthDeclaration({
       participantId: registration.participantId,
       participantName: `${participant.firstName} ${participant.lastName}`,
       phone: participant.phone || '',
       declaration,
+      productType: withDetails.product?.type,
+      productName: withDetails.product?.name,
+      registration: withDetails,
     });
     
     setIsLinkDialogOpen(true);

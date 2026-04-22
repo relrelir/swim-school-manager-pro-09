@@ -9,7 +9,9 @@ export const useHealthForm = () => {
     participantId,
     participantPhone,
     error,
-    healthDeclarationId
+    healthDeclarationId,
+    productType,
+    productName,
   } = useHealthDeclarationLoader();
 
   const {
@@ -20,9 +22,12 @@ export const useHealthForm = () => {
     handleParentNameChange,
     handleParentIdChange,
     handleSignatureChange,
+    handleTermsAgreementChange,
+    handleTermsSignatureChange,
+    handleAfterCareChange,
     handleSubmit
   } = useHealthFormState(healthDeclarationId);
-  
+
   return {
     isLoading,
     isLoadingData,
@@ -31,11 +36,16 @@ export const useHealthForm = () => {
     participantPhone,
     error,
     formState,
+    productType,
+    productName,
     handleAgreementChange,
     handleNotesChange,
     handleParentNameChange,
     handleParentIdChange,
     handleSignatureChange,
+    handleTermsAgreementChange,
+    handleTermsSignatureChange,
+    handleAfterCareChange,
     handleSubmit
   };
 };

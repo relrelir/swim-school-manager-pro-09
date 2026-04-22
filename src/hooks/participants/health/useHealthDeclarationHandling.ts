@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Participant, Registration, HealthDeclaration } from '@/types';
+import { HealthDeclaration, Registration, RegistrationWithDetails } from '@/types';
 
 /**
  * Hook for handling health declaration state and UI operations
@@ -12,6 +12,9 @@ export const useHealthDeclarationHandling = () => {
     participantName: string;
     phone: string;
     declaration?: HealthDeclaration;
+    productType?: string;
+    productName?: string;
+    registration?: Registration | RegistrationWithDetails;
   } | null>(null);
 
   return {

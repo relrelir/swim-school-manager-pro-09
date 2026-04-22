@@ -204,8 +204,24 @@ export function ConvertToRegistrationDialog({ lead, seasons, pools, open, onOpen
       // This runs only after the batch has fully succeeded.
       let healthSent = false;
       try {
+        const effectiveRequiredAmount = Math.max(
+          0,
+          registration.requiredAmount -
+            (registration.discountApproved ? registration.discountAmount ?? 0 : 0)
+        );
         const healthDecl = await addHealthDeclaration({
           participantId,
+          participantName: lead.name,
+          participantIdNumber: lead.idNumber ?? null,
+          participantPhone: lead.phone ?? null,
+          productType: selectedProduct.type ?? null,
+          productName: selectedProduct.name ?? null,
+          registrationId: registration.id,
+          registrationDate: registration.registrationDate,
+          requiredAmount: registration.requiredAmount,
+          discountAmount: registration.discountAmount ?? null,
+          discountApproved: registration.discountApproved,
+          effectiveRequiredAmount,
           token: '',
           formStatus: 'pending',
           submissionDate: null,

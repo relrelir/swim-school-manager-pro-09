@@ -50,6 +50,7 @@ export interface Participant {
   phone: string;
   email?: string;
   healthApproval: boolean;
+  termsApproval: boolean;
   idNumber: string;
 }
 
@@ -100,6 +101,22 @@ export interface HealthDeclaration {
   participantName?: string | null;
   participantIdNumber?: string | null;
   participantPhone?: string | null;
+  // תקנון signature fields
+  termsSignature?: string | null;
+  termsSignedDate?: string | null;
+  // Product context — cached when creating the link so the public form can use it
+  productType?: ProductType | null;
+  productName?: string | null;
+  // Camp after-care (צהרון) — set when submitting the terms step
+  afterCare?: boolean | null;
+  // Cached registration snapshot — written when the link is created so the
+  // public form can render the same registration confirmation PDF as admin
+  registrationId?: string | null;
+  registrationDate?: string | null;
+  requiredAmount?: number | null;
+  discountAmount?: number | null;
+  discountApproved?: boolean | null;
+  effectiveRequiredAmount?: number | null;
 }
 
 export interface RegistrationWithDetails extends Registration {
@@ -125,7 +142,7 @@ export interface DailyActivity {
   numParticipants: number;
   currentMeetingNumber: number;
   totalMeetings: number;
-  participants: Pick<Participant, 'id' | 'firstName' | 'lastName' | 'phone' | 'idNumber' | 'email' | 'healthApproval'>[];
+  participants: Pick<Participant, 'id' | 'firstName' | 'lastName' | 'phone' | 'idNumber' | 'email' | 'healthApproval' | 'termsApproval'>[];
 }
 
 // Leads module
