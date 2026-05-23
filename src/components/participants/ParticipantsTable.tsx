@@ -21,6 +21,7 @@ interface ParticipantsTableProps {
   calculatePaymentStatus: (registration: Registration) => PaymentStatus;
   getStatusClassName: (status: string) => string;
   onAddPayment: (registration: RegistrationWithDetails) => void;
+  onTransfer: (registration: RegistrationWithDetails) => void;
   onDeleteRegistration: (id: string) => void;
   onUpdateHealthApproval: (registrationId: string, isApproved: boolean) => void;
   onOpenHealthForm: (registrationId: string) => void;
@@ -37,6 +38,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
   calculatePaymentStatus,
   getStatusClassName,
   onAddPayment,
+  onTransfer,
   onDeleteRegistration,
   onUpdateHealthApproval,
   onOpenHealthForm,
@@ -154,6 +156,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                       payments={registrationPayments}
                       participantName={`${participant.firstName} ${participant.lastName}`}
                       onAddPayment={onAddPayment}
+                      onTransfer={onTransfer}
                       onDeleteRegistration={onDeleteRegistration}
                     />
                   </div>

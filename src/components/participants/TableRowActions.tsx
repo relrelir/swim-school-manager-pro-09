@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Registration, Payment } from '@/types';
-import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon, HistoryIcon, ScrollText } from 'lucide-react';
+import { Trash2Icon, FileDownIcon, CreditCardIcon, PrinterIcon, HistoryIcon, ScrollText, ArrowLeftRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { generateHealthDeclarationPdf } from '@/utils/generateHealthDeclarationPdf';
 import { generateRegistrationPdf } from '@/utils/generateRegistrationPdf';
@@ -17,6 +17,7 @@ interface TableRowActionsProps {
   payments?: Payment[];
   participantName?: string;
   onAddPayment: (registration: Registration) => void;
+  onTransfer: (registration: Registration) => void;
   onDeleteRegistration: (registrationId: string) => void;
 }
 
@@ -26,6 +27,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
   payments = [],
   participantName = '',
   onAddPayment,
+  onTransfer,
   onDeleteRegistration,
 }) => {
   const { isAdmin } = useAuth();
@@ -183,6 +185,21 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
             </Button>
           </TooltipTrigger>
           <TooltipContent>היסטוריית תשלומים</TooltipContent>
+        </Tooltip>
+      )}
+
+      {isAdmin() && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onTransfer(registration)}
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>העבר לחוג/קורס אחר</TooltipContent>
         </Tooltip>
       )}
       

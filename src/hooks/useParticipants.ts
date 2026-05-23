@@ -65,6 +65,7 @@ export const useParticipants = () => {
     handleAddParticipant: actions.handleAddParticipant,
     handleAddPayment: actions.handleAddPayment,
     handleApplyDiscount: actions.handleApplyDiscount,
+    handleTransferRegistration: actions.handleTransferRegistration,
     handleDeleteRegistration: actions.handleDeleteRegistration,
     handleUpdateHealthApproval: actions.handleUpdateHealthApproval,
     handleOpenHealthForm: actions.handleOpenHealthForm,

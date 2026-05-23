@@ -3,6 +3,17 @@ import { Participant, Product, Registration, RegistrationWithDetails } from '@/t
 import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 
 /**
+ * Pricing decision applied when transferring a registration to another product:
+ *  - 'keep'       — keep the current requiredAmount and discount as-is.
+ *  - 'newProduct' — adopt the target product's price; reset registration-level discount.
+ *  - 'manual'     — admin-entered requiredAmount and optional discount.
+ */
+export type TransferPricing =
+  | { mode: 'keep' }
+  | { mode: 'newProduct' }
+  | { mode: 'manual'; requiredAmount: number; discountAmount?: number | null; discountApproved?: boolean };
+
+/**
  * Single flat hook for all payment-related operations.
  * Receives dataContext directly — no parameter-passing chains.
  *
@@ -21,6 +32,7 @@ export const usePaymentActions = (dataContext: any) => {
     getAllRegistrationsWithDetails,
     addHealthDeclaration,
     getHealthDeclarationForRegistration,
+    updateHealthDeclaration,
     deleteHealthDeclaration,
   } = dataContext;
 
@@ -184,6 +196,95 @@ export const usePaymentActions = (dataContext: any) => {
     return true;
   };
 
+  // ── transferRegistration ────────────────────────────────────────────────────
+  /**
+   * Moves a registration to a different product without re-signing forms.
+   * The same registration document is updated in place, so all payments, receipts,
+   * and the participant's health/terms approval follow automatically.
+   *
+   * Pricing is decided by the caller (see TransferPricing). Existing payment docs
+   * are never touched — the payment status is recomputed from the new requiredAmount,
+   * so a lower price surfaces as overpayment and a higher price as a balance due.
+   */
+  const transferRegistration = async (
+    registrationId: string,
+    targetProductId: string,
+    pricing: TransferPricing
+  ): Promise<boolean> => {
+    const allRegs: RegistrationWithDetails[] = getAllRegistrationsWithDetails();
+    const reg = allRegs.find((r) => r.id === registrationId);
+    if (!reg) {
+      toast({ title: 'שגיאה', description: 'רישום לא נמצא', variant: 'destructive' });
+      return false;
+    }
+
+    const targetProduct = (dataContext.products as Product[] | undefined)?.find(
+      (p) => p.id === targetProductId
+    );
+    if (!targetProduct) {
+      toast({ title: 'שגיאה', description: 'מוצר היעד לא נמצא', variant: 'destructive' });
+      return false;
+    }
+    if (targetProductId === reg.productId) {
+      toast({ title: 'שגיאה', description: 'יש לבחור מוצר שונה מהנוכחי', variant: 'destructive' });
+      return false;
+    }
+
+    // Resolve the pricing fields written onto the registration.
+    let requiredAmount = reg.requiredAmount;
+    let discountAmount = reg.discountAmount ?? null;
+    let discountApproved = reg.discountApproved;
+
+    if (pricing.mode === 'newProduct') {
+      // Match new-registration behaviour: requiredAmount = product.price, no carried discount.
+      requiredAmount = targetProduct.price;
+      discountAmount = null;
+      discountApproved = false;
+    } else if (pricing.mode === 'manual') {
+      requiredAmount = pricing.requiredAmount;
+      discountAmount = pricing.discountAmount ?? null;
+      discountApproved = pricing.discountApproved ?? (discountAmount != null && discountAmount > 0);
+    }
+    // pricing.mode === 'keep' leaves the current values untouched.
+
+    await updateRegistration({
+      ...reg,
+      productId: targetProductId,
+      requiredAmount,
+      discountAmount,
+      discountApproved,
+    });
+
+    // Best-effort: refresh the health declaration's cached product/amount snapshot so
+    // printed confirmations and the public form reflect the new product. Non-fatal —
+    // the transfer itself already succeeded above.
+    try {
+      const healthDecl = await getHealthDeclarationForRegistration(reg.participantId);
+      if (healthDecl) {
+        const effectiveRequiredAmount = Math.max(
+          0,
+          requiredAmount - (discountApproved && discountAmount ? discountAmount : 0)
+        );
+        await updateHealthDeclaration(healthDecl.id, {
+          productType: targetProduct.type,
+          productName: targetProduct.name,
+          requiredAmount,
+          discountAmount,
+          discountApproved,
+          effectiveRequiredAmount,
+        });
+      }
+    } catch (err) {
+      console.error('Error refreshing health declaration after transfer:', err);
+    }
+
+    toast({
+      title: 'המעבר בוצע בהצלחה',
+      description: `המשתתף הועבר ל${targetProduct.name}`,
+    });
+    return true;
+  };
+
   // ── deleteRegistrationWithCleanup ───────────────────────────────────────────
   /**
    * Deletes a registration and cleans up:
@@ -229,6 +330,7 @@ export const usePaymentActions = (dataContext: any) => {
     registerWithInitialPayment,
     addPaymentToRegistration,
     applyDiscountToRegistration,
+    transferRegistration,
     deleteRegistrationWithCleanup,
   };
 };

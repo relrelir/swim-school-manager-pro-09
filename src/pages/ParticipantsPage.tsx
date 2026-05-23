@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useParticipants } from '@/hooks/useParticipants';
 import { useData } from '@/context/DataContext';
 import { toast } from "@/components/ui/use-toast";
-import { Registration, Participant } from '@/types';
+import { Registration, RegistrationWithDetails, Participant } from '@/types';
+import type { TransferPricing } from '@/hooks/usePaymentActions';
 import { useAuth } from '@/context/AuthContext';
 import { exportRegistrationsToCSV } from '@/utils/exportUtils';
 
@@ -11,10 +12,13 @@ import ParticipantsHeader from '@/components/participants/ParticipantsHeader';
 import ParticipantsContent from '@/components/participants/ParticipantsContent';
 import ParticipantsDialogs from '@/components/participants/ParticipantsDialogs';
 import SendHealthDeclarationDialog from '@/components/participants/SendHealthDeclarationDialog';
+import TransferRegistrationDialog from '@/components/participants/TransferRegistrationDialog';
 
 const ParticipantsPage: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { updateParticipant, getAllRegistrationsWithDetails } = useData();
+  const { updateParticipant, getAllRegistrationsWithDetails, products } = useData();
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [transferReg, setTransferReg] = useState<RegistrationWithDetails | null>(null);
   const {
     product,
     registrations,
@@ -40,6 +44,7 @@ const ParticipantsPage: React.FC = () => {
     handleAddParticipant,
     handleAddPayment,
     handleApplyDiscount,
+    handleTransferRegistration,
     handleDeleteRegistration,
     handleUpdateHealthApproval,
     handleOpenHealthForm,
@@ -135,6 +140,28 @@ const ParticipantsPage: React.FC = () => {
     toast({ title: "הייצוא הושלם", description: `יוצאו ${productRegs.length} רשומות` });
   };
 
+  // Handler for opening the transfer dialog
+  const handleOpenTransfer = (registration: Registration) => {
+    if (!isAdmin()) {
+      toast({
+        title: "אין הרשאה",
+        description: "אין לך הרשאה להעביר משתתפים",
+        variant: "destructive",
+      });
+      return;
+    }
+    setTransferReg(registration as RegistrationWithDetails);
+    setIsTransferOpen(true);
+  };
+
+  const handleConfirmTransfer = (
+    registrationId: string,
+    targetProductId: string,
+    pricing: TransferPricing
+  ) => {
+    handleTransferRegistration(registrationId, targetProductId, pricing);
+  };
+
   // Handler for editing a participant
   const handleEditParticipant = (participant: Participant) => {
     if (!isAdmin()) {
@@ -185,6 +212,7 @@ const ParticipantsPage: React.FC = () => {
         calculatePaymentStatus={calculatePaymentStatus}
         getStatusClassName={getStatusClassName}
         onAddPayment={handleOpenAddPayment}
+        onTransfer={handleOpenTransfer}
         onDeleteRegistration={secureDeleteRegistration}
         onUpdateHealthApproval={updateHealthApprovalById}
         onOpenHealthForm={handleOpenHealthForm}
@@ -195,6 +223,15 @@ const ParticipantsPage: React.FC = () => {
       <SendHealthDeclarationDialog
         info={pendingHealthSend}
         onClose={clearPendingHealthSend}
+      />
+
+      {/* Transfer participant to another product */}
+      <TransferRegistrationDialog
+        isOpen={isTransferOpen}
+        onOpenChange={setIsTransferOpen}
+        registration={transferReg}
+        products={products}
+        onConfirm={handleConfirmTransfer}
       />
 
       {/* Dialogs */}

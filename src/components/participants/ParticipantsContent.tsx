@@ -18,6 +18,7 @@ interface ParticipantsContentProps {
   calculatePaymentStatus: (registration: Registration) => PaymentStatus;
   getStatusClassName: (status: string) => string;
   onAddPayment: (registration: Registration) => void;
+  onTransfer: (registration: Registration) => void;
   onDeleteRegistration: (id: string) => void;
   onUpdateHealthApproval: (registrationId: string, isApproved: boolean) => void;
   onOpenHealthForm: (registrationId: string) => void;
@@ -37,6 +38,7 @@ const ParticipantsContent: React.FC<ParticipantsContentProps> = ({
   calculatePaymentStatus,
   getStatusClassName,
   onAddPayment,
+  onTransfer,
   onDeleteRegistration,
   onUpdateHealthApproval,
   onOpenHealthForm,
@@ -92,6 +94,7 @@ const ParticipantsContent: React.FC<ParticipantsContentProps> = ({
           calculatePaymentStatus={calculatePaymentStatus}
           getStatusClassName={getStatusClassName}
           onAddPayment={onAddPayment}
+          onTransfer={onTransfer}
           onDeleteRegistration={onDeleteRegistration}
           onUpdateHealthApproval={updateHealthApprovalAdapter}
           onOpenHealthForm={onOpenHealthForm}

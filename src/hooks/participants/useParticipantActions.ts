@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Registration, Participant } from '@/types';
-import { usePaymentActions } from '../usePaymentActions';
+import { usePaymentActions, type TransferPricing } from '../usePaymentActions';
 import { useParticipantHealth } from '../useParticipantHealth';
 import type { HealthDeclarationSendInfo } from '@/components/participants/SendHealthDeclarationDialog';
 
@@ -35,6 +35,7 @@ export const useParticipantActions = (
     registerWithInitialPayment,
     addPaymentToRegistration,
     applyDiscountToRegistration,
+    transferRegistration,
     deleteRegistrationWithCleanup,
   } = usePaymentActions(dataContext);
 
@@ -111,6 +112,16 @@ export const useParticipantActions = (
     if (success) setIsAddPaymentOpen(false);
   };
 
+  // ── handleTransferRegistration ─────────────────────────────────────────────
+  const handleTransferRegistration = async (
+    registrationId: string,
+    targetProductId: string,
+    pricing: TransferPricing
+  ) => {
+    const success = await transferRegistration(registrationId, targetProductId, pricing);
+    if (success) setRefreshTrigger((prev) => prev + 1);
+  };
+
   // ── handleDeleteRegistration ───────────────────────────────────────────────
   const handleDeleteRegistration = async (registrationId: string) => {
     await deleteRegistrationWithCleanup(registrationId, registrations);
@@ -121,6 +132,7 @@ export const useParticipantActions = (
     handleAddParticipant,
     handleAddPayment,
     handleApplyDiscount,
+    handleTransferRegistration,
     handleDeleteRegistration,
     handleUpdateHealthApproval,
     handleOpenHealthForm,
