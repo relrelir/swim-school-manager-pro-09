@@ -16,7 +16,7 @@ import TransferRegistrationDialog from '@/components/participants/TransferRegist
 
 const ParticipantsPage: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { updateParticipant, getAllRegistrationsWithDetails, products } = useData();
+  const { updateParticipant, getAllRegistrationsWithDetails, products, pools } = useData();
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferReg, setTransferReg] = useState<RegistrationWithDetails | null>(null);
   const {
@@ -231,6 +231,7 @@ const ParticipantsPage: React.FC = () => {
         onOpenChange={setIsTransferOpen}
         registration={transferReg}
         products={products}
+        pools={pools}
         onConfirm={handleConfirmTransfer}
       />
 

@@ -17,7 +17,7 @@ interface TableRowActionsProps {
   payments?: Payment[];
   participantName?: string;
   onAddPayment: (registration: Registration) => void;
-  onTransfer: (registration: Registration) => void;
+  onTransfer?: (registration: Registration) => void;
   onDeleteRegistration: (registrationId: string) => void;
 }
 
@@ -188,7 +188,7 @@ const TableRowActions: React.FC<TableRowActionsProps> = ({
         </Tooltip>
       )}
 
-      {isAdmin() && (
+      {isAdmin() && onTransfer && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

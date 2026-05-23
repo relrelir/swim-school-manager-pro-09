@@ -12,11 +12,13 @@ import EditParticipantDialog from '@/components/participants/EditParticipantDial
 interface RegistrationsTableProps {
   registrations: RegistrationWithDetails[];
   onAddPayment: (registration: Registration) => void;
+  onTransfer?: (registration: RegistrationWithDetails) => void;
   onDeleteRegistration: (registrationId: string) => void;
 }
 const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
   registrations,
   onAddPayment,
+  onTransfer,
   onDeleteRegistration,
 }) => {
   const {
@@ -167,6 +169,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                           payments={registration.payments ?? []}
                           participantName={`${registration.participant.firstName} ${registration.participant.lastName}`}
                           onAddPayment={onAddPayment}
+                          onTransfer={onTransfer ? () => onTransfer(registration) : undefined}
                           onDeleteRegistration={onDeleteRegistration}
                         />
                       </div>

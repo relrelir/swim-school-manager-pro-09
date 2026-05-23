@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Product, RegistrationWithDetails } from '@/types';
+import { Pool, Product, RegistrationWithDetails } from '@/types';
 import type { TransferPricing } from '@/hooks/usePaymentActions';
 import { formatCurrencyForUI } from '@/utils/formatters';
 
@@ -18,6 +18,7 @@ interface TransferRegistrationDialogProps {
   onOpenChange: (open: boolean) => void;
   registration: RegistrationWithDetails | null;
   products: Product[];
+  pools: Pool[];
   onConfirm: (registrationId: string, targetProductId: string, pricing: TransferPricing) => void;
 }
 
@@ -28,6 +29,7 @@ const TransferRegistrationDialog: React.FC<TransferRegistrationDialogProps> = ({
   onOpenChange,
   registration,
   products,
+  pools,
   onConfirm,
 }) => {
   const [targetProductId, setTargetProductId] = useState('');
@@ -42,6 +44,29 @@ const TransferRegistrationDialog: React.FC<TransferRegistrationDialogProps> = ({
       (p) => p.seasonId === registration.product.seasonId && p.id !== registration.productId
     );
   }, [products, registration]);
+
+  // Group target products by pool, sorted alphabetically by pool name.
+  // Products without a pool go into a "ללא בריכה" group at the end.
+  const productsByPool = useMemo(() => {
+    const poolMap = new Map<string, { poolName: string; products: Product[] }>();
+
+    for (const product of targetProducts) {
+      const pool = pools.find((pl) => pl.id === product.poolId);
+      const key = pool?.id ?? '__none__';
+      const poolName = pool?.name ?? 'ללא בריכה';
+      if (!poolMap.has(key)) poolMap.set(key, { poolName, products: [] });
+      poolMap.get(key)!.products.push(product);
+    }
+
+    // Sort groups: named pools alphabetically, then "ללא בריכה" last.
+    return [...poolMap.entries()]
+      .sort(([aKey, a], [bKey, b]) => {
+        if (aKey === '__none__') return 1;
+        if (bKey === '__none__') return -1;
+        return a.poolName.localeCompare(b.poolName, 'he');
+      })
+      .map(([, group]) => group);
+  }, [targetProducts, pools]);
 
   // Reset form each time the dialog opens for a registration.
   useEffect(() => {
@@ -112,15 +137,20 @@ const TransferRegistrationDialog: React.FC<TransferRegistrationDialogProps> = ({
                 <SelectValue placeholder="בחר מוצר יעד" />
               </SelectTrigger>
               <SelectContent>
-                {targetProducts.length === 0 ? (
+                {productsByPool.length === 0 ? (
                   <SelectItem value="none" disabled>
                     אין מוצרים אחרים בעונה זו
                   </SelectItem>
                 ) : (
-                  targetProducts.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({formatCurrencyForUI(p.price)})
-                    </SelectItem>
+                  productsByPool.map((group) => (
+                    <SelectGroup key={group.poolName}>
+                      <SelectLabel>{group.poolName}</SelectLabel>
+                      {group.products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} ({formatCurrencyForUI(p.price)})
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))
                 )}
               </SelectContent>

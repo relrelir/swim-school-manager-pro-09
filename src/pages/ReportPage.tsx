@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/context/DataContext';
 import { RegistrationWithDetails } from '@/types';
+import type { TransferPricing } from '@/hooks/usePaymentActions';
 import { exportRegistrationsToCSV } from '@/utils/exportUtils';
 import { ReportFilters } from '@/utils/reportFilters';
 import ReportSummaryCards from '@/components/report/ReportSummaryCards';
@@ -10,6 +11,7 @@ import RegistrationsTable from '@/components/report/RegistrationsTable';
 import ReportFiltersComponent from '@/components/report/ReportFilters';
 import { filterRegistrations } from '@/utils/reportFilters';
 import AddPaymentDialog from '@/components/participants/AddPaymentDialog';
+import TransferRegistrationDialog from '@/components/participants/TransferRegistrationDialog';
 import { FileDown, Filter } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentActions } from '@/hooks/usePaymentActions';
@@ -24,6 +26,7 @@ const ReportPage: React.FC = () => {
   const {
     addPaymentToRegistration,
     applyDiscountToRegistration,
+    transferRegistration,
     deleteRegistrationWithCleanup,
   } = usePaymentActions(dataContext);
   const [filters, setFilters] = useState<ReportFilters>({
@@ -35,6 +38,23 @@ const ReportPage: React.FC = () => {
     poolId: 'all', // Add pool filter
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Transfer dialog state
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [transferReg, setTransferReg] = useState<RegistrationWithDetails | null>(null);
+
+  const handleOpenTransfer = (registration: RegistrationWithDetails) => {
+    setTransferReg(registration);
+    setIsTransferOpen(true);
+  };
+
+  const handleConfirmTransfer = (
+    registrationId: string,
+    targetProductId: string,
+    pricing: TransferPricing
+  ) => {
+    transferRegistration(registrationId, targetProductId, pricing);
+  };
 
   // Payment dialog state
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
@@ -150,9 +170,19 @@ const ReportPage: React.FC = () => {
         <RegistrationsTable
           registrations={filteredRegistrations}
           onAddPayment={handleOpenAddPayment}
+          onTransfer={handleOpenTransfer}
           onDeleteRegistration={handleDeleteRegistration}
         />
       </div>
+
+      <TransferRegistrationDialog
+        isOpen={isTransferOpen}
+        onOpenChange={setIsTransferOpen}
+        registration={transferReg}
+        products={products}
+        pools={pools}
+        onConfirm={handleConfirmTransfer}
+      />
 
       <AddPaymentDialog
         isOpen={isAddPaymentOpen}
