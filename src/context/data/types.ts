@@ -40,7 +40,7 @@ export interface ParticipantsContextType {
 export interface RegistrationsContextType {
   registrations: Registration[];
   addRegistration: (registration: Omit<Registration, 'id'>) => Promise<Registration | undefined> | undefined;
-  updateRegistration: (registration: Registration) => void;
+  updateRegistration: (registration: Registration) => Promise<boolean>;
   deleteRegistration: (id: string) => void;
   getRegistrationsByProduct: (productId: string) => Registration[];
   calculatePaymentStatus: (registration: Registration) => PaymentStatus;

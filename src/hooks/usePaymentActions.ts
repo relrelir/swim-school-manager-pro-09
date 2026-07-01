@@ -180,11 +180,12 @@ export const usePaymentActions = (dataContext: any) => {
       return false;
     }
 
-    await updateRegistration({
+    const success = await updateRegistration({
       ...reg,
       discountApproved: true,
       discountAmount: (reg.discountAmount || 0) + discountAmount,
     });
+    if (!success) return false; // updateRegistration already showed an error toast
 
     toast({
       title: 'הנחה אושרה',
@@ -247,13 +248,14 @@ export const usePaymentActions = (dataContext: any) => {
     }
     // pricing.mode === 'keep' leaves the current values untouched.
 
-    await updateRegistration({
+    const success = await updateRegistration({
       ...reg,
       productId: targetProductId,
       requiredAmount,
       discountAmount,
       discountApproved,
     });
+    if (!success) return false; // updateRegistration already showed an error toast
 
     // Best-effort: refresh the health declaration's cached product/amount snapshot so
     // printed confirmations and the public form reflect the new product. Non-fatal —

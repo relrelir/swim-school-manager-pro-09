@@ -58,7 +58,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>שם מלא</TableHead>
+            <TableHead className="sticky right-0 z-20 bg-white border-l">שם מלא</TableHead>
             <TableHead>ת.ז</TableHead>
             <TableHead>טלפון</TableHead>
             <TableHead>סכום מקורי</TableHead>
@@ -69,7 +69,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
             <TableHead>הצהרת בריאות</TableHead>
             <TableHead>תקנון</TableHead>
             <TableHead>סטטוס</TableHead>
-            <TableHead>פעולות</TableHead>
+            <TableHead className="sticky left-0 z-20 bg-white border-r">פעולות</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,7 +87,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
             
             return (
               <TableRow key={registration.id}>
-                <TableCell>{`${participant.firstName} ${participant.lastName}`}</TableCell>
+                <TableCell className="sticky right-0 z-10 bg-background border-l">{`${participant.firstName} ${participant.lastName}`}</TableCell>
                 <TableCell>{participant.idNumber}</TableCell>
                 <TableCell>{participant.phone}</TableCell>
                 <TableCell>
@@ -140,7 +140,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                 <TableCell className={`font-semibold ${getStatusClassName(status)}`}>
                   {status}
                 </TableCell>
-                <TableCell>
+                <TableCell className="sticky left-0 z-10 bg-background border-r">
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"

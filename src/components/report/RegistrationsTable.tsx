@@ -57,7 +57,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>שם מלא</TableHead>
+                <TableHead className="sticky right-0 z-20 bg-white border-l">שם מלא</TableHead>
                 <TableHead>ת.ז</TableHead>
                 <TableHead>טלפון</TableHead>
                 <TableHead>עונה</TableHead>
@@ -71,7 +71,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                 <TableHead>מפגש נוכחי</TableHead>
                 <TableHead>סטטוס תשלום</TableHead>
                 <TableHead>תקנון</TableHead>
-                <TableHead>פעולות</TableHead>
+                <TableHead className="sticky left-0 z-20 bg-white border-r">פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,7 +86,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
             // Calculate meeting progress
             const meetingProgress = calculateMeetingProgress(registration.product);
             return <TableRow key={registration.id}>
-                    <TableCell>{`${registration.participant.firstName} ${registration.participant.lastName}`}</TableCell>
+                    <TableCell className="sticky right-0 z-10 bg-background border-l">{`${registration.participant.firstName} ${registration.participant.lastName}`}</TableCell>
                     <TableCell>{registration.participant.idNumber}</TableCell>
                     <TableCell>{registration.participant.phone}</TableCell>
                     <TableCell>{registration.season.name}</TableCell>
@@ -135,7 +135,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="sticky left-0 z-10 bg-background border-r">
                       <div className="flex items-center gap-2 flex-wrap">
                         {registration.participant.healthApproval ? (
                           <Tooltip>

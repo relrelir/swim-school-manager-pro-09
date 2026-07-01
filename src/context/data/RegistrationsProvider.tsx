@@ -38,7 +38,7 @@ export const RegistrationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateRegistration = async (registration: Registration) => {
+  const updateRegistration = async (registration: Registration): Promise<boolean> => {
     try {
       // Destructure only the known Registration fields to prevent Firestore from receiving
       // undefined values or extra nested objects (e.g. from RegistrationWithDetails).
@@ -66,9 +66,11 @@ export const RegistrationsProvider: React.FC<{ children: React.ReactNode }> = ({
         discountApproved,
         receiptNumber,
       });
+      return true;
     } catch (err) {
       console.error('Error updating registration:', err);
       toast({ title: 'שגיאה', description: 'אירעה שגיאה בעדכון הרישום', variant: 'destructive' });
+      return false;
     }
   };
 

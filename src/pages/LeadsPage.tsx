@@ -133,14 +133,14 @@ export default function LeadsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-right">שם</TableHead>
+              <TableHead className="text-right sticky right-0 z-20 bg-white border-l">שם</TableHead>
               <TableHead className="text-right">ת.ז</TableHead>
               <TableHead className="text-right">טלפון</TableHead>
               <TableHead className="text-right">אימייל</TableHead>
               <TableHead className="text-right">סוג פעילות</TableHead>
               <TableHead className="text-right">סטטוס</TableHead>
               <TableHead className="text-right">הערות</TableHead>
-              {isAdmin() && <TableHead className="text-right">פעולות</TableHead>}
+              {isAdmin() && <TableHead className="text-right sticky left-0 z-20 bg-white border-r">פעולות</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,7 +153,7 @@ export default function LeadsPage() {
             ) : (
               filtered.map((lead) => (
                 <TableRow key={lead.id}>
-                  <TableCell className="font-medium whitespace-nowrap">
+                  <TableCell className="font-medium whitespace-nowrap sticky right-0 z-10 bg-background border-l">
                     {lead.name}
                     {lead.convertedToParticipantId && (
                       <UserCheck className="inline h-3 w-3 mr-1 text-green-600" title="הומר לרישום" />
@@ -188,7 +188,7 @@ export default function LeadsPage() {
                     {lead.notes ?? '—'}
                   </TableCell>
                   {isAdmin() && (
-                    <TableCell>
+                    <TableCell className="sticky left-0 z-10 bg-background border-r">
                       <div className="flex gap-1">
                         <Button
                           size="sm" variant="ghost"
