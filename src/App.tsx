@@ -9,6 +9,7 @@ import SeasonPage from './pages/SeasonPage';
 import ProductsPage from './pages/ProductsPage';
 import ParticipantsPage from './pages/ParticipantsPage';
 import ReportPage from './pages/ReportPage';
+import MaintenancePage from './pages/MaintenancePage';
 import DailyActivityPage from './pages/DailyActivityPage';
 import LeadsPage from './pages/LeadsPage';
 import HealthFormPage from './pages/HealthFormPage';
@@ -66,6 +67,7 @@ const AppRoutes = () => (
       <Route path="daily-activity" element={<DailyActivityPage />} />
       <Route path="leads" element={<ProtectedRoute element={<LeadsPage />} />} />
       <Route path="report" element={<ProtectedRoute element={<ReportPage />} requiredRole="admin" />} />
+      <Route path="maintenance" element={<ProtectedRoute element={<MaintenancePage />} requiredRole="admin" />} />
       <Route path="*" element={<NotFound />} />
     </Route>
   </Routes>

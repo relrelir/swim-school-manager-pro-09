@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Calendar, FileText, Home, Users, LayoutDashboard } from 'lucide-react';
+import { Calendar, FileText, Home, Users, LayoutDashboard, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,6 +13,7 @@ const Navigation: React.FC = () => {
     { path: '/leads', icon: <Users className="h-5 w-5" />, label: 'לידים' },
     { path: '/daily-activity', icon: <Calendar className="h-5 w-5" />, label: 'פעילות יומית' },
     { path: '/report', icon: <FileText className="h-5 w-5" />, label: 'דו"ח רישומים', adminOnly: true },
+    { path: '/maintenance', icon: <Wrench className="h-5 w-5" />, label: 'תחזוקה', adminOnly: true },
   ];
 
   const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin());
