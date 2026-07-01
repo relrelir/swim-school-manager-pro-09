@@ -50,11 +50,12 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
 
   return (
     <div className="space-y-4">
-      <ParticipantsTableHeader 
+      <ParticipantsTableHeader
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
-      
+
+      <div className="w-full overflow-x-auto rounded-md border" style={{ overscrollBehavior: 'contain' }}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -166,6 +167,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
           })}
         </TableBody>
       </Table>
+      </div>
 
       {/* Edit Participant Dialog */}
       <EditParticipantDialog

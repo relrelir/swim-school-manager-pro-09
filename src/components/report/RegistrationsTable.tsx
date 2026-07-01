@@ -53,7 +53,7 @@ const RegistrationsTable: React.FC<RegistrationsTableProps> = ({
   return <>
       {registrations.length === 0 ? <div className="text-center p-10 bg-gray-50 rounded-lg">
           <p className="text-lg text-gray-500">לא נמצאו רישומים מתאימים לסינון שנבחר.</p>
-        </div> : <div className="overflow-x-auto">
+        </div> : <div className="w-full overflow-x-auto rounded-md border" style={{ overscrollBehavior: 'contain' }}>
           <Table>
             <TableHeader>
               <TableRow>

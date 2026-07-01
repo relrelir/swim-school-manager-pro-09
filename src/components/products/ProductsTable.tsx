@@ -26,6 +26,9 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 
   const getParticipantsCount = (productId: string) => {
     const registrations = getRegistrationsByProduct(productId);
+    if (registrations.length > 0) {
+      console.debug(`Product ${productId}: ${registrations.length} regs:`, registrations.map(r => ({ id: r.id, participantId: r.participantId, productId: r.productId })));
+    }
     return registrations.length;
   };
 

@@ -129,7 +129,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="border rounded-md overflow-x-auto">
+      <div className="w-full overflow-x-auto rounded-md border" style={{ overscrollBehavior: 'contain' }}>
         <Table>
           <TableHeader>
             <TableRow>
