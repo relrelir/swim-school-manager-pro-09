@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Table } from '@/components/ui/table';
 import { Product } from '@/types';
 import { useData } from '@/context/DataContext';
@@ -22,15 +22,21 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
   onEditProduct,
   onDeleteProduct // חדש
 }) => {
-  const { getRegistrationsByProduct } = useData();
+  const { getAllRegistrationsWithDetails } = useData();
 
-  const getParticipantsCount = (productId: string) => {
-    const registrations = getRegistrationsByProduct(productId);
-    if (registrations.length > 0) {
-      console.debug(`Product ${productId}: ${registrations.length} regs:`, registrations.map(r => ({ id: r.id, participantId: r.participantId, productId: r.productId })));
+  // Count participants per product using the SAME source of truth as the
+  // participants/report pages: getAllRegistrationsWithDetails() drops any
+  // registration whose participant/product/season is missing (orphaned docs),
+  // so the count here matches exactly what the participants list shows.
+  const countByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const reg of getAllRegistrationsWithDetails()) {
+      map.set(reg.productId, (map.get(reg.productId) ?? 0) + 1);
     }
-    return registrations.length;
-  };
+    return map;
+  }, [getAllRegistrationsWithDetails]);
+
+  const getParticipantsCount = (productId: string) => countByProduct.get(productId) ?? 0;
 
   return (
     <Table>

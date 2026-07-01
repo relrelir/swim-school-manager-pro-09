@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,23 +25,31 @@ const SeasonProductsTable: React.FC<SeasonProductsTableProps> = ({
   onEditProduct
 }) => {
   const navigate = useNavigate();
-  const { getRegistrationsByProduct } = useData();
-  
+  const { getAllRegistrationsWithDetails } = useData();
+
   // Use our custom hook for filtering and sorting
-  const { 
-    filter, 
-    setFilter, 
-    sortField, 
-    sortDirection, 
-    handleSort, 
-    filteredAndSortedProducts 
+  const {
+    filter,
+    setFilter,
+    sortField,
+    sortDirection,
+    handleSort,
+    filteredAndSortedProducts
   } = useProductsTable({ products });
 
-  // Get participants count for a product
-  const getParticipantsCount = (productId: string) => {
-    const registrations = getRegistrationsByProduct(productId);
-    return registrations.length;
-  };
+  // Count participants per product using the SAME source of truth as the
+  // participants/report pages: getAllRegistrationsWithDetails() drops any
+  // registration whose participant/product/season is missing (orphaned docs),
+  // so the count matches exactly what the participants list shows.
+  const countByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const reg of getAllRegistrationsWithDetails()) {
+      map.set(reg.productId, (map.get(reg.productId) ?? 0) + 1);
+    }
+    return map;
+  }, [getAllRegistrationsWithDetails]);
+
+  const getParticipantsCount = (productId: string) => countByProduct.get(productId) ?? 0;
 
   if (!season) {
     return null;

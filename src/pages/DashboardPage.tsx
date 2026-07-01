@@ -50,17 +50,18 @@ export default function DashboardPage() {
     const termsApproved = participants.filter((p) => p.termsApproval).length;
     const newLeads = leads.filter((l) => l.status === 'חדש').length;
 
-    // Registrations per product type
+    // Registrations per product type — use regsWithDetails so orphaned
+    // registrations (missing participant/product/season) are excluded, matching
+    // the counts shown on the products and participants pages.
     const byType: Record<string, number> = { 'קורס': 0, 'חוג': 0, 'קייטנה': 0 };
-    registrations.forEach((r) => {
-      const product = products.find((p) => p.id === r.productId);
-      if (product?.type) byType[product.type] = (byType[product.type] ?? 0) + 1;
+    regsWithDetails.forEach((r) => {
+      if (r.product?.type) byType[r.product.type] = (byType[r.product.type] ?? 0) + 1;
     });
 
     // Occupancy per product (top 8)
     const occupancy = products
       .map((p) => {
-        const count = registrations.filter((r) => r.productId === p.id).length;
+        const count = regsWithDetails.filter((r) => r.productId === p.id).length;
         return { name: p.name.length > 14 ? p.name.slice(0, 14) + '…' : p.name, count, max: p.maxParticipants };
       })
       .filter((p) => p.max > 0)
